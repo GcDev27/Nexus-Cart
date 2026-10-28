@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { 
   ArrowLeft, Plus, MoreHorizontal, MessageSquare, List as ListIcon, 
-  Trash2, X
+  Trash2, X, Zap, FileText, Key, Bot, Gamepad2, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authFetch, getToken } from '../../../lib/auth';
@@ -325,7 +325,7 @@ export default function PackageVariationsPage() {
                 >
                   <ListIcon className="w-4 h-4" />
                   Entrega Automática
-                  {editingVariation.deliveryType === 'AUTOMATIC_LINES' && <span className="text-emerald-400 ml-1">✓</span>}
+                  {editingVariation.deliveryType === 'AUTOMATIC_LINES' && <Check className="w-4 h-4 text-emerald-400 ml-1" />}
                 </button>
                 <button 
                   onClick={() => setEditingVariation({...editingVariation, deliveryType: 'MANUAL_CHAT'})}
@@ -333,7 +333,7 @@ export default function PackageVariationsPage() {
                 >
                   <MessageSquare className="w-4 h-4" />
                   Entrega Manual (Chat)
-                  {editingVariation.deliveryType === 'MANUAL_CHAT' && <span className="text-emerald-400 ml-1">✓</span>}
+                  {editingVariation.deliveryType === 'MANUAL_CHAT' && <Check className="w-4 h-4 text-emerald-400 ml-1" />}
                 </button>
               </div>
 
@@ -506,15 +506,33 @@ export default function PackageVariationsPage() {
               <h4 className="text-sm font-medium text-white mb-3">Como funciona?</h4>
               {editingVariation.deliveryType === 'AUTOMATIC_LINES' ? (
                 <div className="space-y-3 text-xs text-neutral-400">
-                  <p>📦 <strong className="text-neutral-300">Entrega Automática</strong> — O cliente recebe o item instantaneamente após o pagamento.</p>
-                  <p>📋 Cada linha no estoque = 1 unidade vendida. Quando uma linha é entregue, ela é removida do estoque disponível.</p>
-                  <p>🔑 Ideal para: keys de jogos, contas, links de download, códigos de ativação.</p>
+                  <div className="flex items-start gap-2.5">
+                    <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <p><strong className="text-neutral-300">Entrega Automática</strong> — O cliente recebe o item instantaneamente após o pagamento.</p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <FileText className="w-4 h-4 text-violet-400 shrink-0 mt-0.5" />
+                    <p>Cada linha no estoque = 1 unidade vendida. Quando uma linha é entregue, ela é removida do estoque disponível.</p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Key className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <p>Ideal para: keys de jogos, contas, links de download, códigos de ativação.</p>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3 text-xs text-neutral-400">
-                  <p>💬 <strong className="text-neutral-300">Entrega Manual</strong> — Um chat é criado após o pagamento para você entregar manualmente.</p>
-                  <p>🤖 A mensagem inicial que você configurar será enviada automaticamente ao comprador.</p>
-                  <p>🎮 Ideal para: serviços personalizados, boosting, itens que requerem interação.</p>
+                  <div className="flex items-start gap-2.5">
+                    <MessageSquare className="w-4 h-4 text-violet-400 shrink-0 mt-0.5" />
+                    <p><strong className="text-neutral-300">Entrega Manual</strong> — Um chat é criado após o pagamento para você entregar manualmente.</p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Bot className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                    <p>A mensagem inicial que você configurar será enviada automaticamente ao comprador.</p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <Gamepad2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <p>Ideal para: serviços personalizados, boosting, itens que requerem interação.</p>
+                  </div>
                 </div>
               )}
             </div>

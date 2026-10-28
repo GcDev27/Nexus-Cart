@@ -31,6 +31,12 @@ public class StockLine {
     @JsonIgnore
     private Variation variation;
 
+    @Column(name = "order_id")
+    private UUID orderId;
+
+    @Column(name = "delivered_at")
+    private LocalDateTime deliveredAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

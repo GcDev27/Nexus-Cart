@@ -14,9 +14,11 @@ const raleway = Raleway({ subsets: ['latin'] });
 const montserrat = Montserrat({ subsets: ['latin'] });
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'] });
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
+
 async function getTenantData(slug: string) {
   try {
-    const res = await fetch(`http://localhost:8081/api/v1/tenants/${slug}`, {
+    const res = await fetch(`${API_BASE}/api/v1/tenants/${slug}`, {
       cache: 'no-store',
     });
     if (!res.ok) return null;
@@ -31,7 +33,7 @@ export default async function StoreLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { storeSlug: string };
+  params: Promise<{ storeSlug: string }>;
 }) {
   const { storeSlug } = await params;
   const tenant = await getTenantData(storeSlug);

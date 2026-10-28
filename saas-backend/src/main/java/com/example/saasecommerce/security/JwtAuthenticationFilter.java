@@ -23,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final com.example.saasecommerce.repository.CustomerRepository customerRepository;
 
     @Override
     protected void doFilterInternal(
@@ -48,15 +49,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // 3. Extrair o email (username) do token
             userEmail = jwtService.extractUsername(jwt);
+            String role = jwtService.extractRole(jwt);
 
             // 4. Se temos um email válido e o utilizador ainda não está autenticado no contexto atual
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = null;
 
-                // Vai à base de dados buscar os detalhes reais do utilizador
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                if ("ROLE_CUSTOMER".equals(role)) {
+                    String customerIdStr = jwtService.extractCustomerId(jwt);
+                    if (customerIdStr != null) {
+                        try {
+                            java.util.UUID cId = java.util.UUID.fromString(customerIdStr);
+                            userDetails = customerRepository.findById(cId).orElse(null);
+                        } catch (Exception ignored) {}
+                    }
+                } else {
+                    // Lojista / Admin
+                    userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                }
 
                 // 5. Valida se o token pertence a este utilizador e se não expirou
-                if (jwtService.isTokenValid(jwt, userDetails)) {
+                if (userDetails != null && jwtService.isTokenValid(jwt, userDetails)) {
 
                     // Cria o "Crachá de Acesso" do Spring Security
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

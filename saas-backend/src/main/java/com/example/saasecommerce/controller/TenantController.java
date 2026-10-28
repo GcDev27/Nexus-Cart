@@ -11,7 +11,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/tenants")
-@CrossOrigin(origins = "http://localhost:3000")
 @RequiredArgsConstructor // Injeta o Service automaticamente graças ao Lombok
 public class TenantController {
 
@@ -46,7 +45,9 @@ public class TenantController {
     // Rota GET: Busca a loja do usuário autenticado
     @GetMapping("/me")
     public ResponseEntity<TenantResponseDTO> getMyTenant(org.springframework.security.core.Authentication authentication) {
-        com.example.saasecommerce.model.User user = (com.example.saasecommerce.model.User) authentication.getPrincipal();
+        if (authentication == null || !(authentication.getPrincipal() instanceof com.example.saasecommerce.model.User user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Tenant tenant = tenantService.getTenantById(user.getTenantId());
         return ResponseEntity.ok(mapToDto(tenant));
     }
@@ -54,7 +55,9 @@ public class TenantController {
     // Rota PUT: Atualiza as configurações da loja do usuário autenticado
     @PutMapping("/me")
     public ResponseEntity<TenantResponseDTO> updateMyTenant(@RequestBody TenantUpdateDTO request, org.springframework.security.core.Authentication authentication) {
-        com.example.saasecommerce.model.User user = (com.example.saasecommerce.model.User) authentication.getPrincipal();
+        if (authentication == null || !(authentication.getPrincipal() instanceof com.example.saasecommerce.model.User user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
         Tenant updatedTenant = tenantService.updateTenantSettings(
             user.getTenantId(), request.theme(), request.primaryColor(), request.font(), 
             request.heroTitle(), request.heroDescription(), request.logoUrl()

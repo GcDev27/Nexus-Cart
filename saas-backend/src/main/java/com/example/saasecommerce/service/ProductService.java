@@ -19,19 +19,21 @@ public class ProductService {
     public Product createProduct(UUID tenantId, Product product) {
         product.setTenantId(tenantId);
         
-        com.example.saasecommerce.model.Variation defaultVariation = com.example.saasecommerce.model.Variation.builder()
-                .name("Padrão")
-                .price(java.math.BigDecimal.ZERO)
-                .deliveryType(com.example.saasecommerce.model.DeliveryType.AUTOMATIC_LINES)
-                .hasUnlimitedStock(false)
-                .stockQuantity(0)
-                .product(product)
-                .build();
-                
-        if (product.getVariations() == null) {
-            product.setVariations(new java.util.ArrayList<>());
+        if (product.getVariations() == null || product.getVariations().isEmpty()) {
+            com.example.saasecommerce.model.Variation defaultVariation = com.example.saasecommerce.model.Variation.builder()
+                    .name("Opção Padrão")
+                    .price(java.math.BigDecimal.ZERO)
+                    .deliveryType(com.example.saasecommerce.model.DeliveryType.AUTOMATIC_LINES)
+                    .hasUnlimitedStock(false)
+                    .stockQuantity(0)
+                    .product(product)
+                    .build();
+            product.setVariations(new java.util.ArrayList<>(java.util.List.of(defaultVariation)));
+        } else {
+            for (com.example.saasecommerce.model.Variation v : product.getVariations()) {
+                v.setProduct(product);
+            }
         }
-        product.getVariations().add(defaultVariation);
         
         return productRepository.save(product);
     }

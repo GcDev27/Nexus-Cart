@@ -37,6 +37,14 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
+    public String extractCustomerId(String token) {
+        return extractClaim(token, claims -> claims.get("customerId", String.class));
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
     public String generateToken(User user) {
         Map<String, Object> extraClaims = new HashMap<>();
 
@@ -47,6 +55,15 @@ public class JwtService {
         extraClaims.put("role", "ROLE_USER");
 
         return generateToken(extraClaims, user);
+    }
+
+    public String generateCustomerToken(com.example.saasecommerce.model.Customer customer) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("customerId", customer.getId().toString());
+        extraClaims.put("tenantId", customer.getTenantId().toString());
+        extraClaims.put("role", "ROLE_CUSTOMER");
+
+        return generateToken(extraClaims, customer);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

@@ -16,7 +16,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "products")
+@Table(name = "products", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_product_tenant_slug", columnNames = {"tenant_id", "slug"})
+})
 public class Product {
 
     @Id
@@ -26,7 +28,7 @@ public class Product {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String slug;
 
     @Column(columnDefinition = "TEXT")

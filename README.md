@@ -15,7 +15,7 @@
 
 ## 📋 Sobre o Projeto
 
-O **CentralCart** é uma plataforma SaaS de e-commerce focada em **produtos digitais** (chaves de jogos, gift cards, licenças de software, etc.), inspirada na [Central Cart](https://centralcart.shop).
+O **Nexus Cart** é uma plataforma SaaS de e-commerce focada em **produtos digitais** (chaves de jogos, gift cards, licenças de software, etc.), inspirada na [Central Cart](https://centralcart.shop).
 
 Cada lojista cria sua **loja isolada (tenant)** com URL exclusiva, configura seus produtos, variações e estoque de chaves, e o sistema cuida de todo o fluxo — do checkout à entrega automática.
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛒 CentralCart — SaaS E-commerce Platform
+# 🛒 Nexus Cart — SaaS E-commerce Platform
 
 **Plataforma SaaS multi-tenant para venda de produtos digitais com entrega automática de chaves/seriais, checkout via PIX e painel administrativo completo.**
 
@@ -179,29 +179,3 @@ npm run dev
 | **Animações** | Framer Motion |
 | **Ícones** | Lucide React + Material Symbols |
 | **Container** | Docker Compose |
-
----
-
-## 📄 Variáveis de Ambiente
-
-### Frontend (`saas-frontend/.env.local`)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8081
-```
-
-### Backend (`saas-backend/application.properties`)
-```env
-DB_URL=jdbc:postgresql://localhost:5433/saas_db
-DB_USERNAME=admin
-DB_PASSWORD=adminpassword
-JWT_SECRET=seu-secret-aqui
-JWT_EXPIRATION=86400000
-SERVER_PORT=8081
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-```
-
----
-
-## 📝 Licença
-
-Este projeto é privado e de uso pessoal/comercial do desenvolvedor.

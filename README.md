@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛒 Nexus Cart — SaaS E-commerce Platform
+# 🛒 NexusCart — SaaS E-commerce Platform
 
 **Plataforma SaaS multi-tenant para venda de produtos digitais com entrega automática de chaves/seriais, checkout via PIX e painel administrativo completo.**
 
@@ -15,7 +15,7 @@
 
 ## 📋 Sobre o Projeto
 
-O **Nexus Cart** é uma plataforma SaaS de e-commerce focada em **produtos digitais** (chaves de jogos, gift cards, licenças de software, etc.), inspirada na [Central Cart](https://centralcart.shop).
+O **NexusCart** é uma plataforma SaaS de e-commerce focada em **produtos digitais** (chaves, acessos, scripts, gift cards, licenças de software, etc.).
 
 Cada lojista cria sua **loja isolada (tenant)** com URL exclusiva, configura seus produtos, variações e estoque de chaves, e o sistema cuida de todo o fluxo — do checkout à entrega automática.
 

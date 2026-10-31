@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-surface flex flex-col items-center justify-center text-outline gap-3">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-        <span className="font-label-md text-label-md">Autenticando CentralCart...</span>
+        <span className="font-label-md text-label-md">Autenticando NexusCart...</span>
       </div>
     );
   }
@@ -69,14 +69,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ──────────────────────────────────────────────────────────── */}
       <aside className="hidden lg:flex fixed left-0 top-0 h-full w-64 bg-surface-container-lowest border-r border-surface-container-high/40 z-50 flex-col justify-between py-space-md">
         <div className="flex flex-col gap-space-lg">
-          {/* Logo CentralCart */}
+          {/* Logo NexusCart Oficial */}
           <div className="px-space-md flex items-center justify-between">
-            <Link href="/admin" className="flex items-center gap-space-sm group">
-              <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shadow-[0_2px_12px_rgba(160,120,255,0.4)] group-hover:scale-105 transition-transform">
-                <span className="material-symbols-outlined text-xl">shopping_bag</span>
-              </div>
-              <span className="font-headline-md text-headline-md tracking-tight text-on-surface">
-                CentralCart
+            <Link href="/admin" className="flex items-center gap-2.5 group">
+              <img 
+                src="/nexuscart-icon.png" 
+                alt="NexusCart" 
+                className="w-8 h-8 rounded-lg object-contain shadow-[0_2px_12px_rgba(160,120,255,0.4)] group-hover:scale-105 transition-transform" 
+              />
+              <span className="font-headline-md text-headline-md tracking-tight text-on-surface font-bold">
+                Nexus<span className="text-[var(--color-brand,#8b5cf6)]">Cart</span>
               </span>
             </Link>
           </div>
@@ -179,11 +181,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <div className="flex flex-col gap-space-md">
               <div className="px-space-sm flex items-center justify-between">
-                <div className="flex items-center gap-space-sm">
-                  <div className="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary shrink-0">
-                    <span className="material-symbols-outlined text-xl">shopping_bag</span>
-                  </div>
-                  <span className="font-headline-md text-on-surface">CentralCart</span>
+                <div className="flex items-center gap-2.5">
+                  <img 
+                    src="/nexuscart-icon.png" 
+                    alt="NexusCart" 
+                    className="w-7 h-7 rounded-lg object-contain shadow-sm" 
+                  />
+                  <span className="font-headline-md text-on-surface font-bold">
+                    Nexus<span className="text-[var(--color-brand,#8b5cf6)]">Cart</span>
+                  </span>
                 </div>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -303,7 +309,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </span>
               </div>
               <span className="font-headline-md text-sm sm:text-base text-on-surface font-bold truncate leading-tight">
-                CentralCart
+                Nexus<span className="text-[var(--color-brand,#8b5cf6)]">Cart</span>
               </span>
             </div>
           </div>

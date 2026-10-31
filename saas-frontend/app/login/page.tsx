@@ -67,11 +67,13 @@ export default function LoginPage() {
       {/* Top Header */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between py-2 relative z-10">
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-85 transition-opacity">
-          <div className="w-8 h-8 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold shadow-sm">
-            <span className="material-symbols-outlined text-lg">shopping_cart</span>
-          </div>
+          <img 
+            src="/nexuscart-icon.png" 
+            alt="NexusCart" 
+            className="w-8 h-8 rounded-lg object-contain shadow-sm" 
+          />
           <span className="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">
-            CentralCart
+            Nexus<span className="text-[var(--color-brand,#8b5cf6)]">Cart</span>
           </span>
         </Link>
 
@@ -187,7 +189,7 @@ export default function LoginPage() {
 
       {/* Footer */}
       <footer className="text-center py-4 font-label-xs text-label-xs text-outline/60">
-        © 2026 CentralCart — Plataforma SaaS de comércio digital automatizado
+        © 2026 NexusCart — Plataforma SaaS de comércio digital automatizado
       </footer>
 
     </div>

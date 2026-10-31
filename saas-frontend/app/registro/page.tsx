@@ -86,12 +86,14 @@ export default function RegisterPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="flex items-center gap-2 mb-6">
-              <div className="w-9 h-9 rounded-xl bg-primary-container text-on-primary flex items-center justify-center font-bold shadow-md">
-                <span className="material-symbols-outlined text-xl">shopping_cart</span>
-              </div>
+            <div className="flex items-center gap-2.5 mb-6">
+              <img 
+                src="/nexuscart-icon.png" 
+                alt="NexusCart" 
+                className="w-9 h-9 rounded-xl object-contain shadow-md" 
+              />
               <span className="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">
-                CentralCart
+                Nexus<span className="text-[var(--color-brand,#8b5cf6)]">Cart</span>
               </span>
             </div>
 
@@ -242,8 +244,8 @@ export default function RegisterPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="text-center z-10 max-w-sm space-y-4"
           >
-            <div className="w-16 h-16 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-primary mx-auto shadow-2xl">
-              <span className="material-symbols-outlined text-3xl">bolt</span>
+            <div className="w-16 h-16 rounded-2xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-center p-2.5 mx-auto shadow-2xl">
+              <img src="/nexuscart-icon.png" alt="NexusCart" className="w-full h-full object-contain" />
             </div>
 
             <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface leading-tight">

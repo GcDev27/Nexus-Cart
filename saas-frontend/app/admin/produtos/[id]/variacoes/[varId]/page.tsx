@@ -718,7 +718,7 @@ export default function EditarVariacaoEstoquePage() {
 
         {/* Right Column (Side Support Panel - 4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-space-lg">
-          {/* Card 'Como funciona?' (CentralCart signature) */}
+          {/* Card 'Como funciona?' (NexusCart signature) */}
           <section className="rounded-xl bg-surface-container-low p-space-lg shadow-[0_8px_24px_-4px_rgba(0,0,0,0.45)] relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 w-36 h-36 bg-tertiary-container/10 rounded-full blur-2xl pointer-events-none"></div>
             <div className="flex items-center gap-space-sm mb-space-md">
@@ -875,7 +875,7 @@ export default function EditarVariacaoEstoquePage() {
               <textarea
                 value={batchText}
                 onChange={(e) => setBatchText(e.target.value)}
-                placeholder={"CHAVE-1902-AAAA-9999\nCHAVE-8821-BBBB-1111\nhttps://centralcart.io/access/exemplo-123"}
+                placeholder={"CHAVE-1902-AAAA-9999\nCHAVE-8821-BBBB-1111\nhttps://nexuscart.io/access/exemplo-123"}
                 rows={6}
                 className="w-full bg-surface-container-lowest text-on-surface font-mono text-body-sm p-3 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary shadow-inner"
               />

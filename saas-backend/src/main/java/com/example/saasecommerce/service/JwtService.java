@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,21 @@ public class JwtService {
 
     @Value("${api.security.token.expiration}")
     private long jwtExpiration;
+
+    // Segredo antigo que ficou público no repositório: quem o conhece consegue forjar tokens
+    private static final String LEAKED_SECRET = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+
+    @PostConstruct
+    void validateSecret() {
+        if (secretKey == null || secretKey.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET não configurado.");
+        }
+        if (LEAKED_SECRET.equalsIgnoreCase(secretKey.trim())) {
+            throw new IllegalStateException("JWT_SECRET usa o valor público antigo do repositório. Gere um novo com: openssl rand -base64 48");
+        }
+        // Falha na inicialização (e não no primeiro login) se o segredo for inválido ou menor que 256 bits
+        getSignInKey();
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

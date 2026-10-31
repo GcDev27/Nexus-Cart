@@ -12,7 +12,7 @@ type Variation = {
   price: number;
   compareAtPrice?: number;
   deliveryType: string;
-  stockLines?: { id: string; content: string; isDelivered?: boolean; delivered?: boolean }[];
+  availableStockCount?: number;
   stockQuantity?: number;
   hasUnlimitedStock?: boolean;
 };
@@ -65,8 +65,7 @@ export default function ProductDetailPage() {
   const isInStock = (v: Variation) => {
     if (v.hasUnlimitedStock) return true;
     if (v.deliveryType === 'AUTOMATIC_LINES') {
-      if (!v.stockLines || v.stockLines.length === 0) return false;
-      return v.stockLines.filter((l: any) => !l.isDelivered && !l.delivered).length > 0;
+      return (v.availableStockCount ?? 0) > 0;
     }
     return (v.stockQuantity ?? 0) > 0;
   };

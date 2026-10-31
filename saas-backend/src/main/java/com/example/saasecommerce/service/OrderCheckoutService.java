@@ -26,10 +26,9 @@ public class OrderCheckoutService {
     private final StockLineRepository stockLineRepository;
     private final PaymentGatewayConfigRepository gatewayConfigRepository;
     private final MercadoPagoPaymentService mercadoPagoPaymentService;
-    private final CustomerRepository customerRepository;
 
     @Transactional
-    public OrderResponse createOrder(CreateOrderRequest request) {
+    public OrderResponse createOrder(CreateOrderRequest request, Customer currentCustomer) {
         Tenant tenant = tenantRepository.findBySlug(request.getTenantSlug())
                 .orElseThrow(() -> new IllegalArgumentException("Loja não encontrada"));
 
@@ -120,16 +119,11 @@ public class OrderCheckoutService {
             qrCode = "00020126580014br.gov.bcb.pix0136" + fakePixId + "520400005303986540" + amount.toPlainString() + "5802BR5915" + tenant.getName() + "6009SAO PAULO62070503***6304ABCD";
         }
 
-        // Busca ou vincula o cliente se existir na loja
-        UUID customerId = request.getCustomerId();
-        if (customerId == null && request.getCustomerEmail() != null) {
-            Optional<Customer> existingCustomer = customerRepository.findByTenantIdAndEmail(
-                    tenant.getId(),
-                    request.getCustomerEmail().trim().toLowerCase()
-            );
-            if (existingCustomer.isPresent()) {
-                customerId = existingCustomer.get().getId();
-            }
+        // Vincula o pedido apenas ao comprador autenticado (token) desta mesma loja.
+        // Não vincular por e-mail nem por ID enviado pelo cliente: ambos podem ser forjados.
+        UUID customerId = null;
+        if (currentCustomer != null && currentCustomer.getTenantId().equals(tenant.getId())) {
+            customerId = currentCustomer.getId();
         }
 
         Order order = Order.builder()

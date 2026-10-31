@@ -30,6 +30,4 @@ public class CreateOrderRequest {
     private String customerEmail;
 
     private String customerCpf;
-
-    private UUID customerId;
 }

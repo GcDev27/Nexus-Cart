@@ -52,14 +52,8 @@ public class CustomerService {
 
         Customer saved = customerRepository.save(customer);
 
-        // Retroatividade: Vincula pedidos anteriores feitos com este mesmo e-mail nesta loja
-        List<Order> previousOrders = orderRepository.findByTenantIdAndCustomerEmailIgnoreCaseOrderByCreatedAtDesc(tenant.getId(), email);
-        for (Order ord : previousOrders) {
-            if (ord.getCustomerId() == null) {
-                ord.setCustomerId(saved.getId());
-                orderRepository.save(ord);
-            }
-        }
+        // Pedidos feitos como convidado NÃO são vinculados por e-mail: sem verificação de e-mail,
+        // qualquer pessoa poderia criar conta com o e-mail de outra e ver as chaves compradas por ela.
 
         String token = jwtService.generateCustomerToken(saved);
         CustomerDTO dto = toDTO(saved);
@@ -103,14 +97,6 @@ public class CustomerService {
                 customer.getTenantId(),
                 customer.getId()
         );
-
-        // Se por algum motivo houver pedidos antigos com o e-mail mas sem customerId, inclui também
-        if (orders.isEmpty()) {
-            orders = orderRepository.findByTenantIdAndCustomerEmailIgnoreCaseOrderByCreatedAtDesc(
-                    customer.getTenantId(),
-                    customer.getEmail()
-            );
-        }
 
         return orders.stream()
                 .map(this::toOrderResponse)

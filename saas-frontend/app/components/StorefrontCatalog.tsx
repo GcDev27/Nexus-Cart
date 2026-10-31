@@ -28,7 +28,7 @@ export type Variation = {
   price: number;
   compareAtPrice?: number;
   deliveryType: string;
-  stockLines?: any[];
+  availableStockCount?: number;
   stockQuantity?: number;
   hasUnlimitedStock?: boolean;
 };
@@ -544,7 +544,7 @@ export default function StorefrontCatalog({
                 {filteredProducts.map(product => {
                   const minPrice = getMinPrice(product);
                   const inStock = product.variations?.some(v =>
-                    v.hasUnlimitedStock || (v.stockLines && v.stockLines.length > 0) || (v.stockQuantity ?? 0) > 0
+                    v.hasUnlimitedStock || (v.availableStockCount ?? 0) > 0 || (v.stockQuantity ?? 0) > 0
                   );
                   const isAutomatic = product.variations?.some(v => v.deliveryType === 'AUTOMATIC_LINES');
                   const categoryBadge = product.categoryName || 'Geral';

@@ -42,6 +42,19 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 }
 
+// Segredo JWT APENAS para desenvolvimento local / testes.
+// Não entra no .jar: em produção a variável JWT_SECRET é obrigatória.
+def devJwtSecret = 'diBp9kts7SJXLfMS5q4DaF0ang9EMVt4zvUHE32oGU1RF+tO9yLQM8XRW2xr0nop'
+
 tasks.named('test') {
     useJUnitPlatform()
+    if (!System.getenv('JWT_SECRET')) {
+        environment 'JWT_SECRET', devJwtSecret
+    }
+}
+
+tasks.named('bootRun') {
+    if (!System.getenv('JWT_SECRET')) {
+        environment 'JWT_SECRET', devJwtSecret
+    }
 }

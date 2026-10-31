@@ -1,6 +1,7 @@
 package com.example.saasecommerce.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -51,11 +52,21 @@ public class Variation {
     @JsonIgnore
     private Product product;
 
+    // Nunca serializar: o conteúdo das linhas são as chaves/seriais do lojista.
+    // O lojista acessa via /api/admin/variacoes/{id}/estoque; a vitrine só recebe a contagem.
     @OneToMany(mappedBy = "variation", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @JsonIgnore
     private List<StockLine> stockLines = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    // Estoque disponível exposto na vitrine (apenas a quantidade, sem o conteúdo)
+    @JsonProperty(value = "availableStockCount", access = JsonProperty.Access.READ_ONLY)
+    public long getAvailableStockCount() {
+        if (stockLines == null) return 0;
+        return stockLines.stream().filter(line -> !line.isDelivered()).count();
+    }
 }

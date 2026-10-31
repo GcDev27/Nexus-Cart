@@ -6,7 +6,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 import { Copy, Check, ArrowLeft, Clock, ExternalLink, User } from 'lucide-react';
 import { PixIcon } from '../../../components/BankIcons';
-import { getCustomerData } from '../../../lib/customerAuth';
+import { getCustomerData, getCustomerToken } from '../../../lib/customerAuth';
 
 type Variation = {
   id: string;
@@ -14,7 +14,7 @@ type Variation = {
   price: number;
   compareAtPrice?: number;
   deliveryType: string;
-  stockLines?: { id: string; content: string; isDelivered?: boolean; delivered?: boolean }[];
+  availableStockCount?: number;
   stockQuantity?: number;
   hasUnlimitedStock?: boolean;
 };
@@ -147,7 +147,7 @@ function CheckoutContent() {
 
   const isOutOfStock = Boolean(
     variation && !variation.hasUnlimitedStock && (
-      (variation.deliveryType === 'AUTOMATIC_LINES' && (!variation.stockLines || variation.stockLines.filter((l: any) => !l.isDelivered && !l.delivered).length === 0)) ||
+      (variation.deliveryType === 'AUTOMATIC_LINES' && (variation.availableStockCount ?? 0) <= 0) ||
       (variation.deliveryType === 'MANUAL_CHAT' && (variation.stockQuantity ?? 0) <= 0)
     )
   );
@@ -160,16 +160,20 @@ function CheckoutContent() {
     setStep('processing');
 
     try {
+      const customerToken = getCustomerToken();
       const res = await fetch(`${API_BASE}/api/checkout/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // O backend identifica o comprador logado pelo token (não aceita customerId no corpo)
+          ...(customerToken ? { Authorization: `Bearer ${customerToken}` } : {}),
+        },
         body: JSON.stringify({
           tenantSlug: storeSlug,
           variationId: variation.id,
           customerName: name,
           customerEmail: email,
           customerCpf: cpf,
-          customerId: getCustomerData()?.id
         })
       });
 

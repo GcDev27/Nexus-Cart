@@ -2,7 +2,7 @@ package com.example.saasecommerce.controller;
 
 import com.example.saasecommerce.dto.CreateOrderRequest;
 import com.example.saasecommerce.dto.OrderResponse;
-import com.example.saasecommerce.model.User;
+import com.example.saasecommerce.model.Customer;
 import com.example.saasecommerce.service.OrderCheckoutService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +21,11 @@ public class CheckoutController {
     private final OrderCheckoutService checkoutService;
 
     @PostMapping("/orders")
-    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        OrderResponse response = checkoutService.createOrder(request);
+    public ResponseEntity<OrderResponse> createOrder(
+            @Valid @RequestBody CreateOrderRequest request,
+            @AuthenticationPrincipal Customer currentCustomer) {
+        // O comprador é identificado pelo token, nunca por um ID enviado no corpo
+        OrderResponse response = checkoutService.createOrder(request, currentCustomer);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

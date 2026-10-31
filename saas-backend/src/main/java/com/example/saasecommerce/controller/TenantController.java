@@ -1,5 +1,6 @@
 package com.example.saasecommerce.controller;
 
+import com.example.saasecommerce.dto.TenantSettingsRequest;
 import com.example.saasecommerce.model.Tenant;
 import com.example.saasecommerce.service.TenantService;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +19,12 @@ public class TenantController {
 
     // DTOs para organizar a entrada e a saída
     public record TenantRequestDTO(String name, String slug) {}
-    public record TenantUpdateDTO(String theme, String primaryColor, String font, String heroTitle, String heroDescription, String logoUrl) {}
-    public record TenantResponseDTO(UUID id, String name, String slug, String theme, String primaryColor, String font, String heroTitle, String heroDescription, String logoUrl) {}
+    public record TenantResponseDTO(
+            UUID id, String name, String slug,
+            String theme, String primaryColor, String font, String cornerStyle,
+            String heroTitle, String heroDescription, String announcementText, String footerText,
+            String logoUrl, String bannerUrl,
+            String discordUrl, String whatsappUrl, String instagramUrl) {}
 
     // Rota POST: Cria a loja (O Next.js vai chamar isso ao cadastrar um cliente)
     @PostMapping
@@ -54,18 +59,21 @@ public class TenantController {
 
     // Rota PUT: Atualiza as configurações da loja do usuário autenticado
     @PutMapping("/me")
-    public ResponseEntity<TenantResponseDTO> updateMyTenant(@RequestBody TenantUpdateDTO request, org.springframework.security.core.Authentication authentication) {
+    public ResponseEntity<TenantResponseDTO> updateMyTenant(@RequestBody TenantSettingsRequest request, org.springframework.security.core.Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof com.example.saasecommerce.model.User user)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Tenant updatedTenant = tenantService.updateTenantSettings(
-            user.getTenantId(), request.theme(), request.primaryColor(), request.font(), 
-            request.heroTitle(), request.heroDescription(), request.logoUrl()
-        );
+        Tenant updatedTenant = tenantService.updateTenantSettings(user.getTenantId(), request);
         return ResponseEntity.ok(mapToDto(updatedTenant));
     }
 
     private TenantResponseDTO mapToDto(Tenant t) {
-        return new TenantResponseDTO(t.getId(), t.getName(), t.getSlug(), t.getTheme(), t.getPrimaryColor(), t.getFont(), t.getHeroTitle(), t.getHeroDescription(), t.getLogoUrl());
+        return new TenantResponseDTO(
+                t.getId(), t.getName(), t.getSlug(),
+                t.getTheme(), t.getPrimaryColor(), t.getFont(),
+                t.getCornerStyle() != null ? t.getCornerStyle() : "rounded",
+                t.getHeroTitle(), t.getHeroDescription(), t.getAnnouncementText(), t.getFooterText(),
+                t.getLogoUrl(), t.getBannerUrl(),
+                t.getDiscordUrl(), t.getWhatsappUrl(), t.getInstagramUrl());
     }
 }

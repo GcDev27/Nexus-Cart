@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
-import { Copy, Check, ArrowLeft, Clock, ExternalLink, User } from 'lucide-react';
+import { Copy, Check, ArrowLeft, Clock, Lock } from 'lucide-react';
 import { PixIcon } from '../../../components/BankIcons';
-import { getCustomerData, getCustomerToken } from '../../../lib/customerAuth';
+import { formatPrice, useStore } from '../../../components/store/StoreContext';
+import type { Product } from '../../../components/store/ProductCards';
+import { AnnouncementBar, StoreBrand, useSocialLinks } from '../../../components/store/StoreChrome';
+import { getStoreCustomerData, getStoreCustomerToken } from '../../../lib/customerAuth';
 
 type Variation = {
   id: string;
@@ -46,7 +49,8 @@ function CheckoutContent() {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [productName, setProductName] = useState('');
   const [productSlug, setProductSlug] = useState('');
-  const [loading, setLoading] = useState(true);
+  // Sem variationId (ex.: pedido aberto a partir de "Minhas compras") não há produto para carregar
+  const [loading, setLoading] = useState(() => Boolean(searchParams.get('variationId')));
   const [step, setStep] = useState<'form' | 'processing' | 'pix' | 'success'>('form');
 
   const [email, setEmail] = useState('');
@@ -55,15 +59,17 @@ function CheckoutContent() {
   const [errors, setErrors] = useState<{ email?: string; name?: string }>({});
 
   const [order, setOrder] = useState<OrderData | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'pix' | 'key' | null>(null);
   const [timeLeft, setTimeLeft] = useState(900);
   const [checkingStatus, setCheckingStatus] = useState(false);
 
-  const storeName = storeSlug?.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const socials = useSocialLinks();
+  const store = useStore();
+  const getCustomerToken = () => getStoreCustomerToken(store.id);
 
   // Auto-preenche dados caso o comprador já esteja logado na loja
   useEffect(() => {
-    const cust = getCustomerData();
+    const cust = getStoreCustomerData(store.id);
     if (cust) {
       if (cust.name) setName(cust.name);
       if (cust.email) setEmail(cust.email);
@@ -91,9 +97,9 @@ function CheckoutContent() {
       headers: { 'X-Tenant-Slug': storeSlug },
     })
       .then(r => r.json())
-      .then((products: any[]) => {
+      .then((products: Product[]) => {
         for (const p of products) {
-          const found = p.variations?.find((v: any) => v.id === variationId);
+          const found = p.variations?.find(v => v.id === variationId);
           if (found) {
             setVariation(found);
             setProductName(p.name);
@@ -213,11 +219,11 @@ function CheckoutContent() {
     }
   };
 
-  const handleCopyPix = () => {
-    if (!order?.qrCode) return;
-    navigator.clipboard.writeText(order.qrCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const copyText = (text: string, what: 'pix' | 'key') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(what);
+      setTimeout(() => setCopied(null), 2500);
+    }).catch(() => {});
   };
 
   const formatTimer = (seconds: number) => {
@@ -236,374 +242,363 @@ function CheckoutContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-white/10 border-t-white/60 rounded-full animate-spin" />
-      </div>
+      <CheckoutShell>
+        <div className="py-32 flex justify-center" aria-label="Carregando">
+          <Spinner />
+        </div>
+      </CheckoutShell>
     );
   }
 
-  if (!variation) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0c] flex flex-col items-center justify-center gap-4 text-white">
-        <p className="text-neutral-400">Produto ou variação não encontrado.</p>
-        <Link href={`/loja/${storeSlug}`} className="text-sm text-neutral-500 hover:text-white transition-colors">
-          ← Voltar à loja
-        </Link>
-      </div>
-    );
-  }
-
-  const isChat = variation.deliveryType === 'MANUAL_CHAT';
+  const isChat = variation?.deliveryType === 'MANUAL_CHAT';
 
   // ━━━ TELA: SUCESSO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] text-white flex items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-8">
-          {/* Confirmação */}
-          <div className="text-center space-y-3">
-            <div className="w-14 h-14 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <svg className="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight">Pagamento confirmado</h1>
-            <p className="text-sm text-neutral-500">
-              Pedido <span className="font-mono text-neutral-400">#{order?.orderId.substring(0, 8)}</span>
+      <CheckoutShell>
+        <div className="max-w-md mx-auto py-12 space-y-8">
+          <div className="text-center">
+            <span className="mx-auto flex items-center justify-center w-14 h-14 rounded-full bg-emerald-500/15 text-emerald-500">
+              <Check className="w-7 h-7" strokeWidth={2.5} />
+            </span>
+            <h1 className="mt-4 text-2xl font-bold tracking-tight">Pagamento confirmado</h1>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Pedido <span className="font-mono">#{order?.orderId.substring(0, 8)}</span>
             </p>
           </div>
 
-          {/* Conteúdo entregue */}
-          <div className="bg-[#111114] rounded-xl p-5 space-y-4">
+          <Card className="p-5 space-y-3">
             {isChat ? (
               <>
-                <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Instruções do vendedor</p>
-                <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap">
-                  {order?.deliveredContent || 'O vendedor entrará em contato pelo seu e-mail para concluir a entrega.'}
+                <p className="text-sm font-semibold">Instruções do vendedor</p>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
+                  {order?.deliveredContent || 'O vendedor vai entrar em contato para concluir a entrega.'}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Sua chave de acesso</p>
-                <div className="bg-[#0a0a0c] rounded-lg p-4 border border-neutral-800/50">
-                  <p className="font-mono text-sm text-emerald-400 break-all select-all leading-relaxed">
-                    {order?.deliveredContent || 'Licença liberada com sucesso.'}
+                <p className="text-sm font-semibold">Sua chave</p>
+                <div className="flex items-center gap-3 p-4 bg-[var(--bg-primary)] border border-[var(--border-color)]" style={{ borderRadius: 'var(--store-radius-sm)' }}>
+                  <p className="flex-1 font-mono text-sm break-all select-all leading-relaxed">
+                    {order?.deliveredContent || 'Licença liberada.'}
                   </p>
+                  {order?.deliveredContent && (
+                    <button
+                      type="button"
+                      onClick={() => copyText(order.deliveredContent!, 'key')}
+                      className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brand)]"
+                    >
+                      {copied === 'key' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copied === 'key' ? 'Copiada' : 'Copiar'}
+                    </button>
+                  )}
                 </div>
               </>
             )}
-            <p className="text-xs text-neutral-600">
-              Também enviamos para <strong className="text-neutral-400">{email}</strong>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              {getCustomerToken()
+                ? 'Esta compra também fica salva em "Minhas compras".'
+                : 'Copie e guarde agora: você comprou sem estar logado, então este é o único lugar onde ela aparece.'}
             </p>
+          </Card>
+
+          {socials.length > 0 && (
+            <div className="text-center">
+              <p className="text-sm text-[var(--text-secondary)]">Algum problema com o pedido?</p>
+              <div className="mt-3 flex flex-wrap justify-center gap-2">
+                {socials.map(({ label, href, Icon }) => (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2 text-sm border border-[var(--border-color)] hover:border-[var(--color-brand)] transition-colors"
+                    style={{ borderRadius: 'var(--store-radius-sm)' }}>
+                    <Icon className="w-4 h-4" />
+                    Falar no {label}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-sm border-t border-[var(--border-color)] pt-5">
+            <span className="text-[var(--text-secondary)]">{order?.productName || productName}, {order?.variationName || variation?.name}</span>
+            <span className="font-semibold tabular-nums">{formatPrice(Number(order?.amount || variation?.price || 0))}</span>
           </div>
 
-          {/* Resumo */}
-          <div className="flex items-center justify-between text-sm border-t border-neutral-800/50 pt-5">
-            <span className="text-neutral-500">{productName} · {variation.name}</span>
-            <span className="font-semibold">R$ {Number(order?.amount || variation.price).toFixed(2)}</span>
-          </div>
-
-          <Link
-            href={`/loja/${storeSlug}`}
-            className="block w-full text-center py-3 bg-white text-black font-medium text-sm rounded-lg hover:bg-neutral-100 transition-colors"
-          >
-            Voltar para a loja
-          </Link>
+          <PrimaryLink href={`/loja/${storeSlug}`}>Voltar para a loja</PrimaryLink>
         </div>
-      </div>
+      </CheckoutShell>
     );
   }
 
   // ━━━ TELA: PIX ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   if (step === 'pix' && order) {
     return (
-      <div className="min-h-screen bg-[#0a0a0c] text-white">
-        {/* Header minimalista */}
-        <header className="border-b border-neutral-800/40">
-          <div className="max-w-lg mx-auto px-5 py-4 flex items-center justify-between">
-            <Link href={`/loja/${storeSlug}`} className="text-sm font-medium text-neutral-400 hover:text-white transition-colors">
-              {storeName}
-            </Link>
-            <span className="text-xs text-neutral-600">Checkout seguro</span>
-          </div>
-        </header>
-
-        <main className="max-w-lg mx-auto px-5 py-10 space-y-8">
-          {/* Status + Valor */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-sm text-neutral-400">Aguardando pagamento</span>
-            </div>
-            <div className="flex items-baseline justify-between">
-              <h1 className="text-3xl font-semibold tabular-nums">
-                R$ {Number(order.amount).toFixed(2)}
-              </h1>
-              <div className="flex items-center gap-1.5 text-neutral-500">
-                <Clock className="w-3.5 h-3.5" />
-                <span className="font-mono text-sm">{formatTimer(timeLeft)}</span>
-              </div>
+      <CheckoutShell>
+        <div className="max-w-md mx-auto py-10 space-y-7">
+          <div>
+            <p className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+              <span className="w-2 h-2 rounded-full bg-amber-400 motion-safe:animate-pulse" />
+              Aguardando pagamento
+            </p>
+            <div className="mt-2 flex items-baseline justify-between">
+              <h1 className="text-3xl font-bold tabular-nums">{formatPrice(Number(order.amount))}</h1>
+              <span className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]" aria-label="Tempo para pagar">
+                <Clock className="w-4 h-4" />
+                <span className="font-mono">{formatTimer(timeLeft)}</span>
+              </span>
             </div>
           </div>
 
-          {/* Aviso modo teste */}
           {order.simulated && (
-            <div className="px-4 py-3 bg-amber-500/5 border border-amber-500/10 rounded-lg">
-              <p className="text-xs text-amber-400/80 leading-relaxed">
-                <strong>Modo demonstração</strong> — {order.message}
-              </p>
-            </div>
+            <p className="px-4 py-3 text-xs leading-relaxed bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25" style={{ borderRadius: 'var(--store-radius-sm)' }}>
+              <strong>Modo de teste:</strong> esta loja ainda não conectou o Mercado Pago, então nenhuma cobrança real foi gerada e este código Pix não funciona.
+            </p>
           )}
 
-          {/* QR Code */}
-          <div className="flex flex-col items-center gap-6">
-            <div className="bg-white p-5 rounded-2xl shadow-lg shadow-black/20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="bg-white p-4 shadow-lg" style={{ borderRadius: 'var(--store-radius)' }}>
               {order.qrCodeBase64 ? (
-                <img 
-                  src={`data:image/png;base64,${order.qrCodeBase64}`} 
-                  alt="QR Code PIX" 
-                  className="w-52 h-52 object-contain"
-                />
+                <img src={`data:image/png;base64,${order.qrCodeBase64}`} alt="QR Code do Pix" className="w-52 h-52 object-contain" />
               ) : (
-                <div className="w-52 h-52 flex flex-col items-center justify-center text-neutral-400 gap-2">
+                <div className="w-52 h-52 flex flex-col items-center justify-center gap-2 text-neutral-500">
                   <PixIcon className="w-12 h-12 text-[#32bcad]" />
-                  <span className="text-xs text-neutral-500">Use o código abaixo</span>
+                  <span className="text-xs">Use o código abaixo</span>
                 </div>
               )}
             </div>
-
-            <p className="text-xs text-neutral-600 text-center max-w-xs">
-              Abra o app do seu banco, escaneie o código ou use a chave copia e cola abaixo
+            <p className="text-sm text-[var(--text-secondary)] text-center max-w-xs">
+              Abra o app do seu banco e escaneie o QR Code ou use o Pix copia e cola.
             </p>
           </div>
 
-          {/* Copia e cola */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 bg-[#111114] rounded-lg border border-neutral-800/50 overflow-hidden">
-              <input
-                type="text"
-                readOnly
-                value={order.qrCode}
-                className="flex-1 bg-transparent px-4 py-3 text-xs text-neutral-400 font-mono outline-none select-all truncate"
-              />
-              <button
-                onClick={handleCopyPix}
-                className={`px-4 py-3 text-xs font-medium flex items-center gap-1.5 transition-colors border-l border-neutral-800/50 ${
-                  copied 
-                    ? 'text-emerald-400 bg-emerald-500/5' 
-                    : 'text-white hover:bg-white/5'
-                }`}
-              >
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? 'Copiado' : 'Copiar'}
-              </button>
-            </div>
+          <div className="flex items-center bg-[var(--bg-card)] border border-[var(--border-color)] overflow-hidden" style={{ borderRadius: 'var(--store-radius-sm)' }}>
+            <input
+              type="text"
+              readOnly
+              value={order.qrCode}
+              aria-label="Código Pix copia e cola"
+              className="flex-1 min-w-0 bg-transparent px-4 py-3 text-xs font-mono text-[var(--text-secondary)] outline-none truncate"
+            />
+            <button
+              type="button"
+              onClick={() => copyText(order.qrCode, 'pix')}
+              className="px-4 py-3 text-sm font-semibold flex items-center gap-1.5 shrink-0"
+              style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)' }}
+            >
+              {copied === 'pix' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied === 'pix' ? 'Copiado' : 'Copiar'}
+            </button>
           </div>
 
-          {/* Ações */}
           <div className="space-y-3">
-            <div className="flex items-center justify-center gap-2 text-xs text-neutral-600">
-              <div className="w-3 h-3 border border-neutral-600 border-t-neutral-400 rounded-full animate-spin" />
-              <span>Verificando pagamento automaticamente...</span>
-            </div>
-
+            <p className="flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)]">
+              <Spinner small />
+              A página atualiza sozinha quando o pagamento for aprovado.
+            </p>
             <button
+              type="button"
               onClick={handleCheckStatus}
               disabled={checkingStatus}
-              className="w-full py-3 text-sm font-medium text-neutral-300 bg-[#111114] hover:bg-[#161619] rounded-lg border border-neutral-800/50 transition-colors"
+              className="w-full py-3 text-sm font-medium bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--border-hover)] transition-colors disabled:opacity-60"
+              style={{ borderRadius: 'var(--store-radius-sm)' }}
             >
-              {checkingStatus ? 'Verificando...' : 'Já paguei · verificar agora'}
+              {checkingStatus ? 'Verificando...' : 'Já paguei, verificar agora'}
             </button>
           </div>
 
           <button
+            type="button"
             onClick={() => setStep('form')}
-            className="flex items-center gap-1.5 text-xs text-neutral-600 hover:text-neutral-400 transition-colors mx-auto"
+            className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mx-auto"
           >
-            <ArrowLeft className="w-3 h-3" />
+            <ArrowLeft className="w-4 h-4" />
             Alterar dados
           </button>
-        </main>
-      </div>
+        </div>
+      </CheckoutShell>
+    );
+  }
+
+  if (!variation) {
+    return (
+      <CheckoutShell>
+        <div className="py-32 text-center">
+          <p className="text-lg font-semibold">Produto não encontrado</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">A opção escolhida pode ter sido removida.</p>
+          <Link href={`/loja/${storeSlug}`} className="inline-block mt-6 text-sm font-semibold text-[var(--color-brand)] hover:underline">
+            Ver todos os produtos
+          </Link>
+        </div>
+      </CheckoutShell>
     );
   }
 
   // ━━━ TELA: FORMULÁRIO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  const inputClass = (hasError?: boolean) =>
+    `w-full bg-[var(--bg-primary)] border px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] ${
+      hasError ? 'border-red-500/60' : 'border-[var(--border-color)] focus:border-[var(--color-brand)]'
+    }`;
+
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-white">
-      {/* Header */}
-      <header className="border-b border-neutral-800/40 sticky top-0 z-30 bg-[#0a0a0c]/90 backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto px-5 py-4 flex items-center justify-between">
-          <Link href={`/loja/${storeSlug}`} className="flex items-center gap-2 text-sm font-medium text-neutral-400 hover:text-white transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            {storeName}
-          </Link>
-          <span className="text-xs text-neutral-600">Checkout</span>
+    <CheckoutShell>
+      <Link href={`/loja/${storeSlug}/produto/${productSlug}`} className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] mt-8">
+        <ArrowLeft className="w-4 h-4" />
+        Voltar ao produto
+      </Link>
+
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-start py-8">
+        <div className="md:col-span-3">
+          <h1 className="text-2xl font-bold tracking-tight">Finalizar compra</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
+            {isChat ? 'Preencha seus dados para o vendedor entrar em contato.' : 'Preencha seus dados e pague com Pix para receber a chave na hora.'}
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-8 space-y-8">
+            <fieldset className="space-y-4">
+              <legend className="text-sm font-semibold mb-4">Seus dados</legend>
+
+              <div>
+                <label htmlFor="checkout-name" className="block text-sm mb-1.5">Nome completo</label>
+                <input id="checkout-name" type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome" autoComplete="name"
+                  className={inputClass(Boolean(errors.name))} style={{ borderRadius: 'var(--store-radius-sm)' }} />
+                {errors.name && <p className="text-red-500 text-xs mt-1.5">{errors.name}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="checkout-email" className="block text-sm mb-1.5">E-mail</label>
+                <input id="checkout-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" autoComplete="email"
+                  className={inputClass(Boolean(errors.email))} style={{ borderRadius: 'var(--store-radius-sm)' }} />
+                {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>}
+                <p className="text-xs text-[var(--text-secondary)] mt-1.5">
+                  {isChat ? 'O vendedor usa este e-mail para falar com você.' : 'Usado para identificar o seu pedido.'}
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="checkout-cpf" className="block text-sm mb-1.5">
+                  CPF <span className="text-[var(--text-secondary)]">(opcional)</span>
+                </label>
+                <input id="checkout-cpf" type="text" value={cpf} onChange={e => setCpf(formatCpf(e.target.value))} placeholder="000.000.000-00" maxLength={14} inputMode="numeric"
+                  className={inputClass()} style={{ borderRadius: 'var(--store-radius-sm)' }} />
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend className="text-sm font-semibold mb-4">Pagamento</legend>
+              <Card className="flex items-center gap-3 p-4" style={{ borderColor: 'var(--color-brand)' }}>
+                <span className="w-10 h-10 rounded-lg bg-[#32bcad]/15 flex items-center justify-center shrink-0">
+                  <PixIcon className="w-5 h-5 text-[#32bcad]" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold">Pix</span>
+                  <span className="block text-xs text-[var(--text-secondary)]">Aprovação na hora, 24 horas por dia</span>
+                </span>
+                <span aria-hidden className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)' }}>
+                  <Check className="w-3 h-3" strokeWidth={3} />
+                </span>
+              </Card>
+            </fieldset>
+
+            {!getCustomerToken() && (
+              <p className="text-sm text-[var(--text-secondary)]">
+                <Link href={`/loja/${storeSlug}/login?redirect=${encodeURIComponent(`/loja/${storeSlug}/checkout?variationId=${variation.id}`)}`} className="font-semibold text-[var(--color-brand)] hover:underline">Entre na sua conta</Link>{' '}
+                antes de pagar para a chave ficar salva em &quot;Minhas compras&quot;.
+              </p>
+            )}
+
+            {isOutOfStock && <p className="text-sm text-red-500">Este produto está esgotado no momento.</p>}
+
+            <button
+              type="submit"
+              disabled={step === 'processing' || isOutOfStock}
+              className="w-full py-4 text-base font-bold transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)', borderRadius: 'var(--store-radius-sm)' }}
+            >
+              {isOutOfStock ? 'Produto esgotado' : step === 'processing' ? 'Gerando o Pix...' : `Pagar ${formatPrice(Number(variation.price))} com Pix`}
+            </button>
+          </form>
+        </div>
+
+        <aside className="md:col-span-2 md:sticky md:top-24">
+          <Card className="p-5 space-y-5">
+            <p className="text-sm font-semibold">Resumo do pedido</p>
+            <div>
+              <p className="font-medium leading-snug">{productName}</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">{variation.name}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1.5">{isChat ? 'Entrega pelo vendedor' : 'Entrega automática'}</p>
+            </div>
+
+            {variation.compareAtPrice && variation.compareAtPrice > variation.price && (
+              <div className="border-t border-[var(--border-color)] pt-4 space-y-2 text-sm">
+                <div className="flex justify-between text-[var(--text-secondary)]">
+                  <span>Preço original</span>
+                  <span className="line-through tabular-nums">{formatPrice(Number(variation.compareAtPrice))}</span>
+                </div>
+                <div className="flex justify-between text-emerald-500">
+                  <span>Desconto</span>
+                  <span className="tabular-nums">- {formatPrice(Number(variation.compareAtPrice) - Number(variation.price))}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-[var(--border-color)] pt-4 flex items-baseline justify-between">
+              <span className="text-sm text-[var(--text-secondary)]">Total</span>
+              <span className="text-2xl font-bold tabular-nums">{formatPrice(Number(variation.price))}</span>
+            </div>
+          </Card>
+        </aside>
+      </div>
+    </CheckoutShell>
+  );
+}
+
+/* ── Peças visuais do checkout (usam o tema da loja) ─────────────── */
+function CheckoutShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <AnnouncementBar />
+      <header className="border-b border-[var(--border-color)] bg-[var(--header-bg)]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          <StoreBrand />
+          <span className="flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
+            <Lock className="w-4 h-4" aria-hidden />
+            Pagamento seguro
+          </span>
         </div>
       </header>
-
-      <main className="max-w-3xl mx-auto px-5 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10 items-start">
-          
-          {/* Formulário — 3 colunas */}
-          <div className="md:col-span-3 space-y-8">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">Finalizar compra</h1>
-              <p className="text-sm text-neutral-500 mt-1">
-                {isChat ? 'Preencha seus dados para que o vendedor entre em contato.' : 'Preencha seus dados para receber o produto automaticamente.'}
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Dados pessoais */}
-              <fieldset className="space-y-4">
-                <legend className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Dados de contato</legend>
-                
-                <div>
-                  <label htmlFor="checkout-name" className="block text-sm text-neutral-300 mb-1.5">Nome completo</label>
-                  <input
-                    id="checkout-name"
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Seu nome"
-                    autoComplete="name"
-                    className={`w-full bg-[#111114] border rounded-lg px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-neutral-700 ${
-                      errors.name ? 'border-red-500/40 focus:border-red-500/60' : 'border-neutral-800/50 focus:border-neutral-600'
-                    }`}
-                  />
-                  {errors.name && <p className="text-red-400/80 text-xs mt-1.5">{errors.name}</p>}
-                </div>
-
-                <div>
-                  <label htmlFor="checkout-email" className="block text-sm text-neutral-300 mb-1.5">E-mail</label>
-                  <input
-                    id="checkout-email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    autoComplete="email"
-                    className={`w-full bg-[#111114] border rounded-lg px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-neutral-700 ${
-                      errors.email ? 'border-red-500/40 focus:border-red-500/60' : 'border-neutral-800/50 focus:border-neutral-600'
-                    }`}
-                  />
-                  {errors.email && <p className="text-red-400/80 text-xs mt-1.5">{errors.email}</p>}
-                  <p className="text-xs text-neutral-600 mt-1.5">
-                    {isChat ? 'O vendedor entrará em contato por este e-mail.' : 'Enviaremos o produto para este endereço.'}
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="checkout-cpf" className="block text-sm text-neutral-300 mb-1.5">
-                    CPF <span className="text-neutral-600 font-normal">· opcional</span>
-                  </label>
-                  <input
-                    id="checkout-cpf"
-                    type="text"
-                    value={cpf}
-                    onChange={e => setCpf(formatCpf(e.target.value))}
-                    placeholder="000.000.000-00"
-                    maxLength={14}
-                    inputMode="numeric"
-                    className="w-full bg-[#111114] border border-neutral-800/50 focus:border-neutral-600 rounded-lg px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-neutral-700"
-                  />
-                </div>
-              </fieldset>
-
-              {/* Método de pagamento */}
-              <fieldset>
-                <legend className="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Pagamento</legend>
-                <div className="flex items-center gap-3 p-4 bg-[#111114] rounded-lg border border-neutral-800/50">
-                  <div className="w-9 h-9 rounded-lg bg-[#32bcad]/10 flex items-center justify-center flex-shrink-0">
-                    <PixIcon className="w-5 h-5 text-[#32bcad]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">PIX</p>
-                    <p className="text-xs text-neutral-500">Aprovação instantânea · 24h</p>
-                  </div>
-                  <div className="w-4 h-4 rounded-full border-2 border-[#32bcad] flex items-center justify-center flex-shrink-0">
-                    <div className="w-2 h-2 rounded-full bg-[#32bcad]" />
-                  </div>
-                </div>
-              </fieldset>
-
-              {/* Estoque esgotado */}
-              {isOutOfStock && (
-                <p className="text-sm text-red-400/70 py-2">
-                  Este produto está esgotado no momento.
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={step === 'processing' || isOutOfStock}
-                className="w-full py-3.5 bg-white text-black font-medium text-sm rounded-lg transition-all hover:bg-neutral-100 active:scale-[0.99] disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                {isOutOfStock 
-                  ? 'Produto esgotado' 
-                  : step === 'processing' 
-                    ? 'Processando...' 
-                    : `Pagar R$ ${Number(variation.price).toFixed(2)}`
-                }
-              </button>
-            </form>
-          </div>
-
-          {/* Resumo — 2 colunas */}
-          <div className="md:col-span-2">
-            <div className="sticky top-20 bg-[#111114] rounded-xl p-5 space-y-5 border border-neutral-800/30">
-              <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Resumo</p>
-
-              <Link href={`/loja/${storeSlug}/produto/${productSlug}`} className="block group">
-                <p className="text-sm font-medium text-white group-hover:text-neutral-300 transition-colors leading-snug">
-                  {productName}
-                </p>
-                <p className="text-xs text-neutral-500 mt-1">{variation.name}</p>
-                <p className="text-[11px] text-neutral-600 mt-1.5">
-                  {isChat ? 'Entrega via chat' : 'Entrega automática'}
-                </p>
-              </Link>
-
-              <div className="border-t border-neutral-800/40 pt-4 space-y-2.5 text-sm">
-                {variation.compareAtPrice && (
-                  <>
-                    <div className="flex justify-between text-neutral-500">
-                      <span>Preço original</span>
-                      <span className="line-through">R$ {Number(variation.compareAtPrice).toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-emerald-500/80">
-                      <span>Desconto</span>
-                      <span>- R$ {(Number(variation.compareAtPrice) - Number(variation.price)).toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="border-t border-neutral-800/40 pt-4 flex items-baseline justify-between">
-                <span className="text-sm text-neutral-400">Total</span>
-                <span className="text-xl font-semibold tabular-nums">R$ {Number(variation.price).toFixed(2)}</span>
-              </div>
-
-              <p className="text-[11px] text-neutral-600 text-center pt-1">
-                Compra protegida · Entrega garantida
-              </p>
-            </div>
-          </div>
-
-        </div>
-      </main>
+      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-6">{children}</main>
     </div>
+  );
+}
+
+function Card({ className = '', style, children }: { className?: string; style?: React.CSSProperties; children: React.ReactNode }) {
+  return (
+    <div className={`bg-[var(--bg-card)] border border-[var(--border-color)] ${className}`} style={{ borderRadius: 'var(--store-radius)', ...style }}>
+      {children}
+    </div>
+  );
+}
+
+function PrimaryLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link href={href} className="block w-full text-center py-3.5 font-semibold hover:brightness-110 transition-all"
+      style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)', borderRadius: 'var(--store-radius-sm)' }}>
+      {children}
+    </Link>
+  );
+}
+
+function Spinner({ small = false }: { small?: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`inline-block rounded-full border-2 border-[var(--border-color)] border-t-[var(--color-brand)] animate-spin ${small ? 'w-3.5 h-3.5' : 'w-6 h-6'}`}
+    />
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-white/10 border-t-white/60 rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen" />}>
       <CheckoutContent />
     </Suspense>
   );

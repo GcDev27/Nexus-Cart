@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import UserButton from "../components/UserButton";
+import { authFetch } from "../lib/auth";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,6 +39,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     setIsMobileMenuOpen(false);
   }, [pathname, router]);
+
+  // Nome real da loja (o lojista pode editar em Configurações; o slug não muda)
+  useEffect(() => {
+    if (!localStorage.getItem("token")) return;
+    authFetch("/api/v1/tenants/me")
+      .then(res => (res.ok ? res.json() : null))
+      .then(tenant => {
+        if (tenant?.name) setStoreName(tenant.name);
+        if (tenant?.slug) setStoreSlug(tenant.slug);
+      })
+      .catch(() => {});
+  }, [pathname]);
 
   // Enquanto verifica o login, mostra tela de carregamento elegante no tema Obsidian Orbit
   if (!isAuthorized) {

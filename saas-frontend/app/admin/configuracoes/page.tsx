@@ -10,17 +10,42 @@ import {
   Save, Store, CheckCircle2, RefreshCw, Sparkles,
   CreditCard, Zap, BookOpen, ExternalLink, Eye, EyeOff,
   ShieldCheck, AlertCircle, Check, X, ChevronRight, Info,
-  Sliders, ArrowUpRight
+  Sliders, ArrowUpRight, Link2
 } from 'lucide-react';
 
 // ─── Tipos das Configurações de Loja ────────────────────────────────
 type FormData = {
+  name: string;
   theme: string;
   primaryColor: string;
   font: string;
+  cornerStyle: string;
   heroTitle: string;
   heroDescription: string;
+  announcementText: string;
+  footerText: string;
   logoUrl: string;
+  bannerUrl: string;
+  discordUrl: string;
+  whatsappUrl: string;
+  instagramUrl: string;
+};
+
+const EMPTY_FORM: FormData = {
+  name: '',
+  theme: 'theme-glass',
+  primaryColor: '#8b5cf6',
+  font: 'Inter',
+  cornerStyle: 'rounded',
+  heroTitle: '',
+  heroDescription: '',
+  announcementText: '',
+  footerText: '',
+  logoUrl: '',
+  bannerUrl: '',
+  discordUrl: '',
+  whatsappUrl: '',
+  instagramUrl: '',
 };
 
 // ─── Tipos dos Gateways ──────────────────────────────────────────────
@@ -39,26 +64,101 @@ interface GatewayConfig {
 }
 
 // ─── Constantes de Design da Loja ──────────────────────────────────
+// Cada template tem um layout próprio na vitrine, não só outra paleta
 const THEMES = [
   {
     id: 'theme-glass',
     name: 'Dark Premium',
-    desc: 'Glassmorphism elegante, como Vercel e Linear',
-    preview: { bg: '#09090b', card: 'rgba(255,255,255,0.04)', text: '#fafafa', accent: '#8b5cf6', border: 'rgba(255,255,255,0.07)' }
+    desc: 'Escuro com vidro, filtros na lateral e grade de cards.',
+    preview: { bg: '#09090b', card: '#18181b', text: '#fafafa', accent: '#8b5cf6', border: 'rgba(255,255,255,0.08)' }
   },
   {
     id: 'theme-light',
     name: 'Clean Light',
-    desc: 'Minimalismo premium, como Apple e Shopify',
-    preview: { bg: '#f8f8f8', card: '#ffffff', text: '#111111', accent: '#2563eb', border: 'rgba(0,0,0,0.08)' }
+    desc: 'Claro e editorial, com capa dividida e fotos grandes.',
+    preview: { bg: '#f8f8f8', card: '#ffffff', text: '#111111', accent: '#2563eb', border: 'rgba(0,0,0,0.1)' }
   },
   {
     id: 'theme-gamer',
     name: 'Gamer Neon',
-    desc: 'Alta intensidade, como Razer e Epic Games',
-    preview: { bg: '#020204', card: '#0c0c14', text: '#e2e8ff', accent: '#22c55e', border: 'rgba(34,197,94,0.2)' }
+    desc: 'Banner de tela cheia, título pesado e cards com corte.',
+    preview: { bg: '#020204', card: '#0c0c14', text: '#e2e8ff', accent: '#22c55e', border: 'rgba(34,197,94,0.35)' }
+  },
+  {
+    id: 'theme-list',
+    name: 'Lista Rápida',
+    desc: 'Produtos em linhas por categoria. Ideal para muitas keys.',
+    preview: { bg: '#131417', card: '#1d1e23', text: '#ececef', accent: '#8b5cf6', border: 'rgba(255,255,255,0.08)' }
   }
 ];
+
+const CORNER_STYLES = [
+  { id: 'rounded', name: 'Arredondado', radius: 14 },
+  { id: 'soft', name: 'Suave', radius: 7 },
+  { id: 'sharp', name: 'Reto', radius: 1 },
+];
+
+// Miniatura do layout de cada template (usada nos cards de escolha e na pré-visualização)
+function TemplateThumb({ themeId, accent, compact = false }: { themeId: string; accent?: string; compact?: boolean }) {
+  const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+  const c = { ...theme.preview, accent: accent || theme.preview.accent };
+  const bar = (w: string, color: string, h = 4) => <div style={{ width: w, height: h, background: color, borderRadius: 2 }} />;
+  const box = { background: c.card, border: `1px solid ${c.border}` };
+
+  return (
+    <div className={`relative w-full ${compact ? 'h-20' : 'h-28'} overflow-hidden`} style={{ background: c.bg }}>
+      {themeId === 'theme-glass' && (
+        <div className="absolute inset-0 p-2 flex flex-col gap-1.5">
+          <div className="h-3 rounded-full flex items-center px-1.5" style={box}>{bar('30%', c.accent, 3)}</div>
+          <div className="flex-1 flex gap-1.5">
+            <div className="w-1/4 rounded space-y-1 p-1" style={box}>{bar('80%', c.border)}{bar('60%', c.border)}{bar('70%', c.border)}</div>
+            <div className="flex-1 grid grid-cols-3 gap-1">{[0,1,2,3,4,5].map(i => <div key={i} className="rounded" style={box} />)}</div>
+          </div>
+          <div className="absolute -top-4 -right-4 w-12 h-12 rounded-full blur-xl opacity-50" style={{ background: c.accent }} />
+        </div>
+      )}
+      {themeId === 'theme-light' && (
+        <div className="absolute inset-0 p-2 flex flex-col gap-1.5">
+          <div className="h-2.5 flex items-center justify-between" style={{ borderBottom: `1px solid ${c.border}` }}>{bar('25%', c.text, 3)}{bar('10%', c.accent, 3)}</div>
+          <div className="flex gap-2 items-center">
+            <div className="flex-1 space-y-1">{bar('90%', c.text, 5)}{bar('60%', c.text, 5)}{bar('35%', c.accent, 4)}</div>
+            <div className="w-2/5 h-9 rounded" style={{ background: c.accent, opacity: 0.25 }} />
+          </div>
+          <div className="grid grid-cols-4 gap-1 flex-1">{[0,1,2,3].map(i => <div key={i} className="rounded-sm" style={box} />)}</div>
+        </div>
+      )}
+      {themeId === 'theme-gamer' && (
+        <div className="absolute inset-0 flex flex-col">
+          <div className="h-2.5" style={{ borderBottom: `2px solid ${c.accent}` }} />
+          <div className="h-10 relative px-2 flex flex-col justify-center gap-1" style={{ background: `radial-gradient(circle at 80% 40%, ${c.accent}55, transparent 60%)` }}>
+            {bar('12%', c.accent, 2)}{bar('55%', c.text, 5)}
+          </div>
+          <div className="grid grid-cols-4 gap-1 p-2 flex-1">
+            {[0,1,2,3].map(i => (
+              <div key={i} style={{ background: c.accent, padding: 1, clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))' }}>
+                <div className="w-full h-full" style={{ background: c.card, clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {themeId === 'theme-list' && (
+        <div className="absolute inset-0 p-2 flex flex-col gap-1">
+          {bar('40%', c.text, 4)}
+          <div className="flex-1 rounded mt-1 flex flex-col" style={box}>
+            {[0,1,2,3].map(i => (
+              <div key={i} className="flex-1 flex items-center gap-1.5 px-1.5" style={{ borderTop: i ? `1px solid ${c.border}` : 'none' }}>
+                <div className="w-3 h-3 rounded-sm" style={{ background: c.border }} />
+                <div className="flex-1">{bar('55%', c.text, 3)}</div>
+                <div className="w-5 h-2 rounded-sm" style={{ background: c.accent }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const FONTS = [
   { name: 'Inter', family: 'Inter, sans-serif', style: 'normal', desc: 'Clean & tecnológica' },
@@ -292,19 +392,22 @@ const GATEWAY_DETAILS: Record<GatewayProvider, {
 
 // ─── Tabs de Navegação Unificadas ──────────────────────────────────
 const TABS = [
+  { id: 'identidade', label: 'Identidade', icon: Store },
   { id: 'tema', label: 'Aparência', icon: Palette },
-  { id: 'tipografia', label: 'Tipografia', icon: Type },
-  { id: 'textos', label: 'Textos & Logo', icon: AlignLeft },
+  { id: 'textos', label: 'Textos', icon: AlignLeft },
+  { id: 'contato', label: 'Contato e redes', icon: Link2 },
   { id: 'pagamentos', label: 'Gateways de Pagamento', icon: CreditCard },
 ];
+const TAB_IDS = TABS.map(t => t.id);
 
 // ─── Componente de Pré-visualização da Vitrine ────────────────────
 function LivePreview({ formData }: { formData: FormData }) {
   const theme = THEMES.find(t => t.id === formData.theme) || THEMES[0];
   const colors = theme.preview;
-  const primaryColor = formData.primaryColor || colors.accent;
   const font = FONTS.find(f => f.name === formData.font);
   const fontFamily = font?.family || 'Inter, sans-serif';
+  const radius = CORNER_STYLES.find(c => c.id === formData.cornerStyle)?.radius ?? 14;
+  const name = formData.name || 'Minha loja';
 
   return (
     <div className="sticky top-6 space-y-3">
@@ -314,107 +417,122 @@ function LivePreview({ formData }: { formData: FormData }) {
         <span className="ml-auto text-xs text-zinc-600 bg-zinc-800/50 px-2 py-0.5 rounded-full">Ao vivo</span>
       </div>
 
-      <div className="rounded-2xl overflow-hidden border border-zinc-800/80 shadow-2xl">
-        <div className="bg-[#141418] px-4 py-2.5 flex items-center gap-2 border-b border-zinc-800/80">
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-            <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-            <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
+      <div className="rounded-2xl overflow-hidden border border-zinc-800/80 shadow-2xl" style={{ fontFamily, background: colors.bg, color: colors.text }}>
+        {formData.announcementText && (
+          <div className="px-3 py-1 text-center text-[9px] font-semibold text-white truncate" style={{ background: formData.primaryColor }}>
+            {formData.announcementText}
           </div>
-          <div className="flex-1 bg-zinc-800/80 rounded-full h-4 mx-4 flex items-center px-2">
-            <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: primaryColor, opacity: 0.8 }} />
-            <div className="h-1.5 w-16 bg-zinc-700 rounded-full" />
+        )}
+        <div className="px-3 py-2 flex items-center justify-between gap-2" style={{ borderBottom: `1px solid ${colors.border}` }}>
+          <div className="flex items-center gap-1.5 min-w-0">
+            {formData.logoUrl ? (
+              <img src={formData.logoUrl} alt="" className="h-4 w-auto object-contain" style={{ maxWidth: 48 }} />
+            ) : (
+              <span className="w-4 h-4 flex items-center justify-center text-[8px] font-bold text-white shrink-0"
+                style={{ background: formData.primaryColor, borderRadius: Math.min(radius, 5) }}>
+                {name.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <span className={`text-[10px] font-bold truncate ${formData.theme === 'theme-gamer' ? 'uppercase italic' : ''}`}>{name}</span>
+          </div>
+          <span className="px-2 py-0.5 text-[8px] font-bold text-white" style={{ background: formData.primaryColor, borderRadius: Math.min(radius, 6) }}>
+            Entrar
+          </span>
+        </div>
+
+        <div className="relative h-24 overflow-hidden" style={{ background: formData.bannerUrl ? undefined : `radial-gradient(circle at 75% 30%, ${formData.primaryColor}40, transparent 65%)` }}>
+          {formData.bannerUrl && <img src={formData.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-70" />}
+          <div className={`relative h-full px-3 flex flex-col justify-center ${formData.theme === 'theme-glass' && !formData.bannerUrl ? 'items-center text-center' : ''}`}>
+            <div className={`text-[12px] leading-tight line-clamp-2 ${formData.theme === 'theme-gamer' ? 'font-black italic uppercase' : 'font-bold'}`}>
+              {formData.heroTitle || 'Título da sua loja'}
+            </div>
+            <div className="mt-1 text-[8px] line-clamp-2 opacity-70">{formData.heroDescription}</div>
           </div>
         </div>
 
-        <div className="relative" style={{ backgroundColor: colors.bg, fontFamily }}>
-          {formData.theme === 'theme-glass' && (
-            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20 blur-2xl"
-              style={{ backgroundColor: primaryColor }} />
-          )}
-
-          {formData.theme === 'theme-gamer' && (
-            <div className="absolute inset-0 pointer-events-none" style={{
-              backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)'
-            }} />
-          )}
-
-          <div className="relative px-4 py-3 flex items-center justify-between" style={{
-            background: formData.theme === 'theme-glass' ? 'rgba(0,0,0,0.4)' : formData.theme === 'theme-gamer' ? 'rgba(0,0,0,0.8)' : colors.bg,
-            borderBottom: `1px solid ${colors.border}`,
-            backdropFilter: formData.theme === 'theme-glass' ? 'blur(12px)' : 'none',
-          }}>
-            <div className="flex items-center gap-2">
-              {formData.logoUrl ? (
-                <img src={formData.logoUrl} alt="Logo" className="h-4 w-auto object-contain" style={{ maxWidth: 60 }} />
-              ) : (
-                <span className="font-bold text-[10px] tracking-widest uppercase" 
-                  style={{ color: primaryColor, fontFamily }}>
-                  Minha Loja
-                </span>
-              )}
+        <div className="p-3">
+          {formData.theme === 'theme-list' ? (
+            <div className="overflow-hidden" style={{ border: `1px solid ${colors.border}`, borderRadius: radius / 1.5, background: colors.card }}>
+              {['VIP 30 dias', 'Key Vitalícia', 'Pack de itens'].map((p, i) => (
+                <div key={p} className="flex items-center gap-2 px-2 py-1.5" style={{ borderTop: i ? `1px solid ${colors.border}` : 'none' }}>
+                  <div className="w-4 h-4 shrink-0" style={{ background: colors.border, borderRadius: radius / 3 }} />
+                  <span className="flex-1 text-[8px] font-semibold truncate">{p}</span>
+                  <span className="text-[8px] font-bold">R$ {29 + i * 20},90</span>
+                  <span className="px-1.5 py-0.5 text-[7px] font-bold text-white" style={{ background: formData.primaryColor, borderRadius: radius / 3 }}>Comprar</span>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-3 rounded-full" style={{ backgroundColor: colors.border }} />
-              <div className="px-2 py-0.5 rounded-full text-[7px] font-bold text-white" 
-                style={{ backgroundColor: primaryColor, fontFamily }}>
-                Entrar
-              </div>
-            </div>
-          </div>
-
-          <div className="px-4 py-5 text-center relative z-10">
-            <div className="font-extrabold text-[11px] leading-tight mb-1.5 line-clamp-1" 
-              style={{ color: colors.text, fontFamily }}>
-              {formData.heroTitle || 'Premium Digital Assets.'}
-            </div>
-            <div className="text-[8px] leading-relaxed line-clamp-2 mb-3" style={{ color: colors.text, opacity: 0.6, fontFamily }}>
-              {formData.heroDescription || 'Eleve seu projeto com produtos de alta qualidade.'}
-            </div>
-            <div className="inline-block px-3 py-1 rounded-full text-[7px] font-bold text-white"
-              style={{ backgroundColor: primaryColor }}>
-              Ver Catálogo
-            </div>
-          </div>
-
-          <div className="px-3 pb-4 grid grid-cols-3 gap-2">
-            {[
-              { name: 'VIP Pass', price: 'R$ 39,90' },
-              { name: 'Script Pro', price: 'R$ 89,90' },
-              { name: 'Licença Gold', price: 'R$ 149,90' },
-            ].map((p, i) => (
-              <div key={i} className="rounded-lg overflow-hidden relative" style={{
-                backgroundColor: colors.card,
-                border: `1px solid ${i === 0 ? primaryColor + '40' : colors.border}`,
-              }}>
-                <div className="aspect-square flex items-center justify-center" style={{
-                  background: 'rgba(255,255,255,0.03)'
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {['VIP 30 dias', 'Key Vitalícia', 'Pack de itens'].map((p, i) => (
+                <div key={p} className="overflow-hidden" style={{
+                  background: formData.theme === 'theme-light' ? 'transparent' : colors.card,
+                  border: formData.theme === 'theme-light' ? 'none' : `1px solid ${formData.theme === 'theme-gamer' ? formData.primaryColor : colors.border}`,
+                  borderRadius: formData.theme === 'theme-gamer' ? 0 : radius / 1.5,
                 }}>
-                  <div className="w-4 h-4 rounded opacity-30" style={{ backgroundColor: primaryColor }} />
+                  <div className="aspect-square" style={{ background: `${formData.primaryColor}22`, borderRadius: formData.theme === 'theme-light' ? radius / 1.5 : 0 }} />
+                  <div className="p-1.5">
+                    <div className={`text-[7px] font-semibold truncate ${formData.theme === 'theme-gamer' ? 'uppercase italic' : ''}`}>{p}</div>
+                    <div className="text-[8px] font-bold" style={{ color: formData.theme === 'theme-light' ? colors.text : formData.primaryColor }}>R$ {29 + i * 20},90</div>
+                  </div>
                 </div>
-                <div className="p-1.5">
-                  <div className="text-[6px] font-semibold line-clamp-1 mb-0.5" style={{ color: colors.text, fontFamily }}>{p.name}</div>
-                  <div className="text-[7px] font-bold" style={{ color: primaryColor, fontFamily }}>{p.price}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5 mt-2">
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/60 text-zinc-400 border border-zinc-800">
-          {theme.name}
-        </span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/60 text-zinc-400 border border-zinc-800">
-          {formData.font}
-        </span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/60 border border-zinc-800 font-mono" 
-          style={{ color: primaryColor }}>
+        {[theme.name, formData.font, CORNER_STYLES.find(c => c.id === formData.cornerStyle)?.name].map(tag => (
+          <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/60 text-zinc-400 border border-zinc-800">{tag}</span>
+        ))}
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/60 border border-zinc-800 font-mono" style={{ color: formData.primaryColor }}>
           {formData.primaryColor.toUpperCase()}
         </span>
       </div>
     </div>
+  );
+}
+
+// ─── Blocos de formulário das abas da vitrine ─────────────────────
+function SettingsCard({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+  return (
+    <section className="bg-[#141418] border border-zinc-800/80 rounded-2xl p-6">
+      <h2 className="text-white font-semibold text-sm">{title}</h2>
+      {desc && <p className="text-zinc-400 text-xs mt-1">{desc}</p>}
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
+function TextField({
+  label, value, onChange, placeholder, maxLength, multiline = false, type = 'text', hint,
+}: {
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  maxLength?: number;
+  multiline?: boolean;
+  type?: 'text' | 'url';
+  hint?: string;
+}) {
+  const className = 'w-full bg-[#101014] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-zinc-500 outline-none transition-colors placeholder:text-zinc-600';
+  return (
+    <label className="block">
+      {(label || maxLength) && (
+        <span className="flex items-center justify-between mb-1.5 text-xs">
+          <span className="text-zinc-400 font-medium">{label}</span>
+          {maxLength && <span className="text-zinc-600 tabular-nums">{value.length}/{maxLength}</span>}
+        </span>
+      )}
+      {multiline ? (
+        <textarea rows={3} value={value} onChange={e => onChange(e.target.value)} maxLength={maxLength} placeholder={placeholder} className={`${className} resize-none`} />
+      ) : (
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} maxLength={maxLength} placeholder={placeholder} className={className} />
+      )}
+      {hint && <span className="block mt-1.5 text-xs text-zinc-500">{hint}</span>}
+    </label>
   );
 }
 
@@ -423,18 +541,12 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState('tema');
+  const [activeTab, setActiveTab] = useState('identidade');
   const { addToast } = useToast();
 
   // Dados da loja
-  const [formData, setFormData] = useState<FormData>({
-    theme: 'theme-glass',
-    primaryColor: '#8b5cf6',
-    font: 'Inter',
-    heroTitle: 'Premium Digital Assets.',
-    heroDescription: 'Eleve seu projeto com produtos de alta qualidade desenvolvidos por especialistas.',
-    logoUrl: ''
-  });
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
+  const [storeSlug, setStoreSlug] = useState('');
 
   // Dados dos Gateways
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
@@ -467,8 +579,10 @@ export default function SettingsPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam && ['tema', 'tipografia', 'textos', 'pagamentos'].includes(tabParam)) {
-        setActiveTab(tabParam);
+      // "tipografia" virou parte de "Aparência"; links antigos continuam funcionando
+      const tab = tabParam === 'tipografia' ? 'tema' : tabParam;
+      if (tab && TAB_IDS.includes(tab)) {
+        setActiveTab(tab);
       }
     }
   }, []);
@@ -485,14 +599,13 @@ export default function SettingsPage() {
       const tenantRes = await authFetch('/api/v1/tenants/me');
       if (tenantRes.ok) {
         const tenantData = await tenantRes.json();
-        setFormData({
-          theme: tenantData.theme || 'theme-glass',
-          primaryColor: tenantData.primaryColor || '#8b5cf6',
-          font: tenantData.font || 'Inter',
-          heroTitle: tenantData.heroTitle || 'Premium Digital Assets.',
-          heroDescription: tenantData.heroDescription || 'Eleve seu projeto com produtos de alta qualidade.',
-          logoUrl: tenantData.logoUrl || ''
+        // Campos opcionais chegam como null; o formulário trabalha com texto vazio
+        const loaded = { ...EMPTY_FORM };
+        (Object.keys(EMPTY_FORM) as (keyof FormData)[]).forEach(key => {
+          if (typeof tenantData[key] === 'string') loaded[key] = tenantData[key];
         });
+        setFormData(loaded);
+        setStoreSlug(tenantData.slug || '');
       }
 
       // 2. Dados dos Gateways
@@ -526,9 +639,11 @@ export default function SettingsPage() {
       });
       if (res.ok) {
         setSaved(true);
-        addToast('Configurações da loja salvas com sucesso!', 'success');
+        addToast('Configurações da loja salvas.', 'success');
       } else {
-        addToast('Erro ao salvar configurações.', 'error');
+        // O backend explica o que está errado (ex.: link sem https)
+        const err = await res.json().catch(() => null);
+        addToast(err?.error || 'Não foi possível salvar as configurações.', 'error');
       }
     } catch {
       addToast('Erro de comunicação com o servidor.', 'error');
@@ -908,87 +1023,97 @@ export default function SettingsPage() {
       )}
 
       {/* ═════════════════════════════════════════════════════════════════ */}
-      {/* ABAS DA VITRINE: TEMA, TIPOGRAFIA E TEXTOS COM LIVE PREVIEW       */}
+      {/* ABAS DA VITRINE: IDENTIDADE, APARÊNCIA, TEXTOS E CONTATO + PREVIEW  */}
       {/* ═════════════════════════════════════════════════════════════════ */}
       {!isPaymentsTab && (
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-8 items-start">
           
           <div className="space-y-6">
             
-            {/* ── TAB: Tema ─────────────────────────────── */}
+            {/* ── TAB: Identidade ───────────────────────── */}
+            {activeTab === 'identidade' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <SettingsCard title="Nome da loja" desc="Aparece no topo da vitrine, no rodapé e na aba do navegador.">
+                  <TextField
+                    value={formData.name}
+                    onChange={v => update('name', v)}
+                    maxLength={60}
+                    placeholder="Ex.: Loja do Rafa"
+                  />
+                  {storeSlug && (
+                    <p className="mt-2 text-xs text-zinc-500">
+                      Endereço da loja: <a href={`/loja/${storeSlug}`} target="_blank" rel="noopener noreferrer" className="text-zinc-300 hover:underline">/loja/{storeSlug}</a>. O endereço não muda quando você troca o nome.
+                    </p>
+                  )}
+                </SettingsCard>
+
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <SettingsCard title="Logo" desc="PNG, SVG, WEBP ou JPG. Prefira fundo transparente.">
+                    <ImageUploader
+                      value={formData.logoUrl}
+                      onChange={val => update('logoUrl', val)}
+                      label=""
+                      helperText="Sem logo, a loja mostra a inicial do nome."
+                      aspectRatio="square"
+                      maxDimension={600}
+                    />
+                  </SettingsCard>
+
+                  <SettingsCard title="Banner de capa" desc="Imagem grande no topo da vitrine. Use pelo menos 1600 px de largura.">
+                    <ImageUploader
+                      value={formData.bannerUrl}
+                      onChange={val => update('bannerUrl', val)}
+                      label=""
+                      helperText="Sem banner, cada template usa um fundo na cor da loja."
+                      aspectRatio="video"
+                      maxDimension={1920}
+                    />
+                  </SettingsCard>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB: Aparência ────────────────────────── */}
             {activeTab === 'tema' && (
               <div className="space-y-6 animate-in fade-in duration-150">
-                
-                {/* Theme Cards */}
-                <div className="bg-[#141418] border border-zinc-800/80 rounded-2xl p-6">
-                  <div className="mb-5">
-                    <h2 className="text-white font-semibold text-sm mb-1">Template da Loja</h2>
-                    <p className="text-zinc-400 text-xs">Escolha a identidade visual que mais combina com seu produto.</p>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <SettingsCard title="Template da loja" desc="Cada template muda o layout da vitrine, não só as cores.">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {THEMES.map(theme => {
                       const isActive = formData.theme === theme.id;
                       return (
                         <button
                           key={theme.id}
+                          type="button"
                           onClick={() => update('theme', theme.id)}
-                          className={`relative text-left rounded-xl border-2 overflow-hidden transition-all duration-150 group ${
-                            isActive 
-                              ? 'border-violet-500 shadow-md shadow-violet-500/10' 
-                              : 'border-zinc-800 hover:border-zinc-700'
+                          aria-pressed={isActive}
+                          className={`relative text-left rounded-xl border-2 overflow-hidden transition-colors ${
+                            isActive ? 'border-violet-500' : 'border-zinc-800 hover:border-zinc-700'
                           }`}
                         >
-                          <div className="h-24 relative" style={{ backgroundColor: theme.preview.bg }}>
-                            {theme.id === 'theme-glass' && (
-                              <div className="absolute top-2 right-2 w-8 h-8 rounded-full opacity-40 blur-xl" 
-                                style={{ backgroundColor: theme.preview.accent }} />
-                            )}
-                            <div className="absolute top-0 left-0 right-0 px-2 py-1.5 flex items-center justify-between"
-                              style={{ borderBottom: `1px solid ${theme.preview.border}` }}>
-                              <div className="w-8 h-1.5 rounded-full" style={{ backgroundColor: theme.preview.accent, opacity: 0.8 }} />
-                              <div className="flex gap-1">
-                                <div className="w-4 h-1 rounded-full" style={{ backgroundColor: theme.preview.border }} />
-                                <div className="w-4 h-1 rounded-full" style={{ backgroundColor: theme.preview.accent }} />
-                              </div>
-                            </div>
-                            <div className="absolute bottom-2 left-2 right-2 grid grid-cols-3 gap-1">
-                              {[0,1,2].map(i => (
-                                <div key={i} className="rounded h-8" style={{
-                                  backgroundColor: theme.preview.card,
-                                  border: `1px solid ${i === 0 ? theme.preview.accent + '50' : theme.preview.border}`,
-                                }} />
-                              ))}
-                            </div>
-                          </div>
+                          <TemplateThumb themeId={theme.id} accent={formData.primaryColor} />
                           <div className="p-3 bg-[#18181c] border-t border-zinc-800">
-                            <div className="flex items-center justify-between mb-0.5">
-                              <span className="text-white text-xs font-semibold">{theme.name}</span>
-                              {isActive && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
-                              )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-white text-sm font-semibold">{theme.name}</span>
+                              {isActive && <CheckCircle2 className="w-4 h-4 text-violet-400" />}
                             </div>
-                            <span className="text-zinc-500 text-[10px]">{theme.desc}</span>
+                            <span className="text-zinc-400 text-xs">{theme.desc}</span>
                           </div>
                         </button>
                       );
                     })}
                   </div>
-                </div>
+                </SettingsCard>
 
-                {/* Color Section */}
-                <div className="bg-[#141418] border border-zinc-800/80 rounded-2xl p-6">
-                  <div className="mb-5">
-                    <h2 className="text-white font-semibold text-sm mb-1">Cor Principal</h2>
-                    <p className="text-zinc-400 text-xs">Define a cor dos botões, destaques e gradientes da sua loja.</p>
-                  </div>
-
+                <SettingsCard title="Cor principal" desc="Usada em botões, preços em destaque e detalhes do template.">
                   <div className="flex flex-wrap gap-2.5 mb-5">
                     {PRESET_COLORS.map(preset => (
                       <button
                         key={preset.color}
+                        type="button"
                         onClick={() => update('primaryColor', preset.color)}
                         title={preset.name}
-                        className="relative w-8 h-8 rounded-full transition-all duration-150 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        aria-label={`Cor ${preset.name}`}
+                        className="relative w-8 h-8 rounded-full transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white/30"
                         style={{ backgroundColor: preset.color }}
                       >
                         {formData.primaryColor.toLowerCase() === preset.color && (
@@ -999,124 +1124,124 @@ export default function SettingsPage() {
                       </button>
                     ))}
                   </div>
-
                   <div className="flex items-center gap-3 p-3 bg-[#101014] border border-zinc-800 rounded-xl">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-lg cursor-pointer overflow-hidden border border-zinc-700"
-                        style={{ backgroundColor: formData.primaryColor }}>
-                        <input
-                          type="color"
-                          value={formData.primaryColor}
-                          onChange={e => update('primaryColor', e.target.value)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                      </div>
+                    <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-zinc-700" style={{ backgroundColor: formData.primaryColor }}>
+                      <input
+                        type="color"
+                        value={/^#[0-9a-f]{6}$/i.test(formData.primaryColor) ? formData.primaryColor : '#8b5cf6'}
+                        onChange={e => update('primaryColor', e.target.value)}
+                        aria-label="Escolher cor personalizada"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
                     </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Código HEX</label>
+                    <label className="flex-1">
+                      <span className="text-xs text-zinc-500">Código da cor</span>
                       <input
                         type="text"
                         value={formData.primaryColor.toUpperCase()}
-                        onChange={e => update('primaryColor', e.target.value)}
-                        className="w-full bg-transparent text-white font-mono text-sm outline-none border-none mt-0.5"
+                        onChange={e => update('primaryColor', e.target.value.toLowerCase())}
+                        maxLength={7}
+                        className="w-full bg-transparent text-white font-mono text-sm outline-none mt-0.5"
                         placeholder="#8B5CF6"
                       />
-                    </div>
-                    <Sparkles className="w-4 h-4 text-zinc-600" />
+                    </label>
                   </div>
-                </div>
-              </div>
-            )}
+                </SettingsCard>
 
-            {/* ── TAB: Tipografia ──────────────────────── */}
-            {activeTab === 'tipografia' && (
-              <div className="bg-[#141418] border border-zinc-800/80 rounded-2xl p-6 animate-in fade-in duration-150">
-                <div className="mb-6">
-                  <h2 className="text-white font-semibold text-sm mb-1">Tipografia da Loja</h2>
-                  <p className="text-zinc-400 text-xs">Selecione uma família de fontes otimizada para legibilidade.</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {FONTS.map(font => {
-                    const isActive = formData.font === font.name;
-                    return (
-                      <button
-                        key={font.name}
-                        onClick={() => update('font', font.name)}
-                        className={`relative text-left p-4 rounded-xl border transition-all duration-150 ${
-                          isActive 
-                            ? 'border-violet-500 bg-violet-500/5' 
-                            : 'border-zinc-800 bg-[#101014] hover:border-zinc-700'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <span 
-                            className="text-lg font-bold leading-none"
-                            style={{ fontFamily: font.family, color: isActive ? '#ffffff' : '#d4d4d8', fontStyle: font.style === 'italic' ? 'italic' : 'normal' }}
-                          >
-                            {font.name}
-                          </span>
-                          {isActive && <CheckCircle2 className="w-4 h-4 text-violet-400 shrink-0 mt-0.5" />}
-                        </div>
-                        <span 
-                          className="text-xs block mb-1"
-                          style={{ fontFamily: font.family, color: '#71717a' }}
+                <SettingsCard title="Cantos" desc="Arredondamento de cards, botões e imagens.">
+                  <div className="grid grid-cols-3 gap-3">
+                    {CORNER_STYLES.map(style => {
+                      const isActive = formData.cornerStyle === style.id;
+                      return (
+                        <button
+                          key={style.id}
+                          type="button"
+                          onClick={() => update('cornerStyle', style.id)}
+                          aria-pressed={isActive}
+                          className={`p-4 rounded-xl border text-center transition-colors ${
+                            isActive ? 'border-violet-500 bg-violet-500/5' : 'border-zinc-800 bg-[#101014] hover:border-zinc-700'
+                          }`}
                         >
-                          Aa Bb Cc — 1 2 3
-                        </span>
-                        <span className="text-[10px] text-zinc-500">{font.desc}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                          <span
+                            aria-hidden
+                            className="block mx-auto w-12 h-9 border-2"
+                            style={{ borderRadius: style.radius, borderColor: isActive ? formData.primaryColor : '#52525b' }}
+                          />
+                          <span className="block mt-2 text-sm text-white">{style.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </SettingsCard>
+
+                <SettingsCard title="Fonte" desc="Usada em todos os textos da vitrine.">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {FONTS.map(font => {
+                      const isActive = formData.font === font.name;
+                      return (
+                        <button
+                          key={font.name}
+                          type="button"
+                          onClick={() => update('font', font.name)}
+                          aria-pressed={isActive}
+                          className={`text-left p-4 rounded-xl border transition-colors ${
+                            isActive ? 'border-violet-500 bg-violet-500/5' : 'border-zinc-800 bg-[#101014] hover:border-zinc-700'
+                          }`}
+                        >
+                          <span className="flex items-start justify-between">
+                            <span
+                              className="text-lg font-bold leading-none text-white"
+                              style={{ fontFamily: font.family, fontStyle: font.style === 'italic' ? 'italic' : 'normal' }}
+                            >
+                              {font.name}
+                            </span>
+                            {isActive && <CheckCircle2 className="w-4 h-4 text-violet-400 shrink-0" />}
+                          </span>
+                          <span className="block mt-2 text-sm text-zinc-400" style={{ fontFamily: font.family }}>
+                            Key VIP 30 dias por R$ 29,90
+                          </span>
+                          <span className="block mt-1 text-xs text-zinc-500">{font.desc}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </SettingsCard>
               </div>
             )}
 
-            {/* ── TAB: Textos & Logo ───────────────────── */}
+            {/* ── TAB: Textos ───────────────────────────── */}
             {activeTab === 'textos' && (
-              <div className="space-y-4 animate-in fade-in duration-150">
-                <div className="bg-[#141418] border border-zinc-800/80 rounded-2xl p-6">
-                  <div className="mb-4">
-                    <h2 className="text-white font-semibold text-sm mb-1">Logotipo da Loja</h2>
-                    <p className="text-zinc-400 text-xs">Carregue a logomarca da sua loja diretamente do seu dispositivo (PNG, SVG, WEBP ou JPG).</p>
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <SettingsCard title="Capa da vitrine" desc="O primeiro texto que o comprador lê ao abrir a loja.">
+                  <div className="space-y-4">
+                    <TextField label="Título" value={formData.heroTitle} onChange={v => update('heroTitle', v)} maxLength={80} placeholder="Ex.: Keys VIP com entrega na hora" />
+                    <TextField label="Descrição" value={formData.heroDescription} onChange={v => update('heroDescription', v)} maxLength={200} multiline placeholder="Conte em uma ou duas frases o que a sua loja vende." />
                   </div>
-                  
-                  <div className="max-w-xs">
-                    <ImageUploader
-                      value={formData.logoUrl}
-                      onChange={val => update('logoUrl', val)}
-                      label=""
-                      helperText="Recomendado: imagem com fundo transparente."
-                      aspectRatio="square"
-                      maxDimension={600}
-                    />
-                  </div>
-                </div>
+                </SettingsCard>
 
-                <div className="bg-[#141418] border border-zinc-800/80 rounded-2xl p-6 space-y-4">
-                  <h2 className="text-white font-semibold text-sm mb-1">Textos de Apresentação</h2>
-                  
-                  <div>
-                    <label className="text-xs text-zinc-400 font-medium block mb-1.5">Título Principal (Hero)</label>
-                    <input 
-                      type="text"
-                      maxLength={80}
-                      value={formData.heroTitle}
-                      onChange={e => update('heroTitle', e.target.value)}
-                      className="w-full bg-[#101014] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-zinc-500 outline-none transition-colors"
-                    />
-                  </div>
+                <SettingsCard title="Faixa de aviso" desc="Uma linha na cor da loja, no topo de todas as páginas. Deixe vazio para esconder.">
+                  <TextField value={formData.announcementText} onChange={v => update('announcementText', v)} maxLength={120} placeholder="Ex.: 10% de desconto pagando no Pix até domingo" />
+                </SettingsCard>
 
-                  <div>
-                    <label className="text-xs text-zinc-400 font-medium block mb-1.5">Descrição Curta</label>
-                    <textarea 
-                      rows={3}
-                      maxLength={200}
-                      value={formData.heroDescription}
-                      onChange={e => update('heroDescription', e.target.value)}
-                      className="w-full bg-[#101014] border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-sm focus:border-zinc-500 outline-none transition-colors resize-none"
-                    />
+                <SettingsCard title="Texto do rodapé" desc="Informações como horário de atendimento, CNPJ ou política de trocas.">
+                  <TextField value={formData.footerText} onChange={v => update('footerText', v)} maxLength={300} multiline placeholder="Ex.: Atendimento de segunda a sábado, das 10h às 22h." />
+                </SettingsCard>
+              </div>
+            )}
+
+            {/* ── TAB: Contato e redes ──────────────────── */}
+            {activeTab === 'contato' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                <SettingsCard
+                  title="Onde o comprador fala com você"
+                  desc="Os links aparecem no rodapé e na página de cada produto. Deixe vazio o que você não usa."
+                >
+                  <div className="space-y-4">
+                    <TextField label="Convite do Discord" value={formData.discordUrl} onChange={v => update('discordUrl', v)} placeholder="https://discord.gg/seu-servidor" type="url" />
+                    <TextField label="WhatsApp" value={formData.whatsappUrl} onChange={v => update('whatsappUrl', v)} placeholder="https://wa.me/5511999999999" type="url" hint="Use o link wa.me com DDI e DDD, só números." />
+                    <TextField label="Instagram" value={formData.instagramUrl} onChange={v => update('instagramUrl', v)} placeholder="https://instagram.com/sua-loja" type="url" />
                   </div>
-                </div>
+                </SettingsCard>
               </div>
             )}
 

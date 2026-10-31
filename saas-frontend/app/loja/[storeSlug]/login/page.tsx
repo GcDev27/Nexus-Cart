@@ -1,20 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { setCustomerSession } from '../../../lib/customerAuth';
-import { ShieldCheck, ArrowRight, Eye, EyeOff, Lock, Mail, User, CreditCard } from 'lucide-react';
+import { Eye, EyeOff, Mail, User, CreditCard } from 'lucide-react';
+import { useStore } from '../../../components/store/StoreContext';
+import { AnnouncementBar, StoreFooter, StoreHeader } from '../../../components/store/StoreChrome';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
-export default function StoreCustomerLoginPage() {
+function LoginContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const storeSlug = params.storeSlug as string;
-  const redirect = searchParams.get('redirect') || `/loja/${storeSlug}/minhas-compras`;
+  const store = useStore();
+  // Só redireciona para páginas desta loja: evita que um link malicioso mande o comprador para outro site
+  const requested = searchParams.get('redirect') || '';
+  const redirect = requested.startsWith(`/loja/${storeSlug}/`) && !requested.startsWith('//')
+    ? requested
+    : `/loja/${storeSlug}/minhas-compras`;
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
@@ -29,8 +36,6 @@ export default function StoreCustomerLoginPage() {
   const [regEmail, setRegEmail] = useState('');
   const [regCpf, setRegCpf] = useState('');
   const [regPassword, setRegPassword] = useState('');
-
-  const storeName = storeSlug?.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   // Formatação de CPF: 000.000.000-00
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,8 +77,8 @@ export default function StoreCustomerLoginPage() {
 
       setCustomerSession(data.token, data.customer);
       router.push(redirect);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao realizar login.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao entrar.');
     } finally {
       setLoading(false);
     }
@@ -107,223 +112,168 @@ export default function StoreCustomerLoginPage() {
 
       setCustomerSession(data.token, data.customer);
       router.push(redirect);
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao criar conta.');
     } finally {
       setLoading(false);
     }
   };
 
+  const fieldClass =
+    'w-full bg-[var(--bg-primary)] border border-[var(--border-color)] focus:border-[var(--color-brand)] px-3.5 py-3 pr-10 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none transition-colors';
+  const fieldStyle = { borderRadius: 'var(--store-radius-sm)' };
+
+  const passwordToggle = (
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+    >
+      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+    </button>
+  );
+
+  const submitButton = (label: string) => (
+    <button
+      type="submit"
+      disabled={loading}
+      className="w-full mt-2 py-3 text-sm font-semibold flex items-center justify-center gap-2 hover:brightness-110 transition-all disabled:opacity-50"
+      style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)', borderRadius: 'var(--store-radius-sm)' }}
+    >
+      {loading ? <span className="w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin" aria-label="Carregando" /> : label}
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
-      
-      {/* Luz ambiente de fundo */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[350px] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none" />
+    <div className="min-h-screen flex flex-col">
+      <AnnouncementBar />
+      <StoreHeader />
 
-      {/* Header com retorno para a loja */}
-      <div className="w-full max-w-md mb-6 flex items-center justify-between text-xs text-zinc-500">
-        <Link href={`/loja/${storeSlug}`} className="hover:text-zinc-300 transition-colors flex items-center gap-1.5">
-          ← Voltar à vitrine
+      <main className="flex-1 flex flex-col items-center px-4 py-12 sm:py-16">
+        <div
+          className="w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-color)] p-7 sm:p-8 shadow-2xl"
+          style={{ borderRadius: 'var(--store-radius)' }}
+        >
+          <div className="text-center mb-7">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {activeTab === 'login' ? 'Entrar na sua conta' : 'Criar sua conta'}
+            </h1>
+            <p className="text-sm text-[var(--text-secondary)] mt-1.5">
+              {activeTab === 'login'
+                ? `Veja suas compras e chaves em ${store.name}.`
+                : 'Com uma conta, todas as suas chaves ficam salvas em "Minhas compras".'}
+            </p>
+          </div>
+
+          <div
+            role="tablist"
+            className="grid grid-cols-2 p-1 bg-[var(--bg-primary)] border border-[var(--border-color)] mb-6 text-sm font-medium"
+            style={{ borderRadius: 'var(--store-radius-sm)' }}
+          >
+            {(['login', 'register'] as const).map(tab => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab}
+                onClick={() => { setActiveTab(tab); setError(null); }}
+                className={`py-2 transition-colors ${activeTab === tab ? 'font-semibold' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                style={{
+                  borderRadius: 'calc(var(--store-radius-sm) - 2px)',
+                  ...(activeTab === tab ? { background: 'var(--color-brand)', color: 'var(--store-on-brand)' } : {}),
+                }}
+              >
+                {tab === 'login' ? 'Já tenho conta' : 'Criar conta'}
+              </button>
+            ))}
+          </div>
+
+          {error && (
+            <p role="alert" className="mb-5 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/25" style={fieldStyle}>
+              {error}
+            </p>
+          )}
+
+          {activeTab === 'login' ? (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <label className="block">
+                <span className="block text-sm mb-1.5">E-mail</span>
+                <span className="relative block">
+                  <input type="email" required autoComplete="email" placeholder="seu@email.com" value={loginEmail}
+                    onChange={e => setLoginEmail(e.target.value)} className={fieldClass} style={fieldStyle} />
+                  <Mail className="w-4 h-4 text-[var(--text-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm mb-1.5">Senha</span>
+                <span className="relative block">
+                  <input type={showPassword ? 'text' : 'password'} required autoComplete="current-password" value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)} className={fieldClass} style={fieldStyle} />
+                  {passwordToggle}
+                </span>
+              </label>
+
+              {submitButton('Entrar')}
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <label className="block">
+                <span className="block text-sm mb-1.5">Nome completo</span>
+                <span className="relative block">
+                  <input type="text" required autoComplete="name" placeholder="Seu nome" value={regName}
+                    onChange={e => setRegName(e.target.value)} className={fieldClass} style={fieldStyle} />
+                  <User className="w-4 h-4 text-[var(--text-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm mb-1.5">E-mail</span>
+                <span className="relative block">
+                  <input type="email" required autoComplete="email" placeholder="seu@email.com" value={regEmail}
+                    onChange={e => setRegEmail(e.target.value)} className={fieldClass} style={fieldStyle} />
+                  <Mail className="w-4 h-4 text-[var(--text-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm mb-1.5">CPF <span className="text-[var(--text-secondary)]">(opcional)</span></span>
+                <span className="relative block">
+                  <input type="text" inputMode="numeric" placeholder="000.000.000-00" value={regCpf}
+                    onChange={handleCpfChange} className={fieldClass} style={fieldStyle} />
+                  <CreditCard className="w-4 h-4 text-[var(--text-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </span>
+              </label>
+
+              <label className="block">
+                <span className="block text-sm mb-1.5">Senha <span className="text-[var(--text-secondary)]">(mínimo 6 caracteres)</span></span>
+                <span className="relative block">
+                  <input type={showPassword ? 'text' : 'password'} required minLength={6} autoComplete="new-password" value={regPassword}
+                    onChange={e => setRegPassword(e.target.value)} className={fieldClass} style={fieldStyle} />
+                  {passwordToggle}
+                </span>
+              </label>
+
+              {submitButton('Criar conta')}
+            </form>
+          )}
+        </div>
+
+        <Link href={`/loja/${storeSlug}`} className="mt-6 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+          Voltar para a loja
         </Link>
-        <span className="text-zinc-600 font-medium">{storeName}</span>
-      </div>
+      </main>
 
-      <div className="w-full max-w-md bg-[#121215] border border-white/[0.08] rounded-2xl p-7 sm:p-8 shadow-2xl relative z-10 backdrop-blur-xl">
-        
-        {/* Título & Boas-vindas */}
-        <div className="text-center mb-7">
-          <div className="w-11 h-11 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center mx-auto mb-3 text-zinc-300">
-            <Lock className="w-5 h-5 text-indigo-400" />
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">
-            {activeTab === 'login' ? 'Área do Cliente' : 'Criar Conta de Comprador'}
-          </h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            {activeTab === 'login' 
-              ? `Acesse seu histórico de pedidos em ${storeName}` 
-              : 'Cadastre-se para acessar suas chaves digitais e compras'}
-          </p>
-        </div>
-
-        {/* Abas Alternadoras */}
-        <div className="grid grid-cols-2 p-1 bg-white/[0.04] rounded-xl border border-white/5 mb-6 text-xs font-medium">
-          <button
-            type="button"
-            onClick={() => { setActiveTab('login'); setError(null); }}
-            className={`py-2 rounded-lg transition-all ${
-              activeTab === 'login' 
-                ? 'bg-white/10 text-white shadow-sm font-semibold' 
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            Já tenho conta
-          </button>
-          <button
-            type="button"
-            onClick={() => { setActiveTab('register'); setError(null); }}
-            className={`py-2 rounded-lg transition-all ${
-              activeTab === 'register' 
-                ? 'bg-white/10 text-white shadow-sm font-semibold' 
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            Cadastrar
-          </button>
-        </div>
-
-        {/* Mensagem de Erro */}
-        {error && (
-          <div className="mb-5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400">
-            {error}
-          </div>
-        )}
-
-        {/* Formulário de Login */}
-        {activeTab === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">E-mail</label>
-              <div className="relative">
-                <input
-                  type="email"
-                  required
-                  placeholder="seu@email.com"
-                  value={loginEmail}
-                  onChange={e => setLoginEmail(e.target.value)}
-                  className="w-full bg-[#18181c] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/80 transition-colors"
-                />
-                <Mail className="w-4 h-4 text-zinc-600 absolute right-3.5 top-3 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Senha</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  placeholder="••••••••"
-                  value={loginPassword}
-                  onChange={e => setLoginPassword(e.target.value)}
-                  className="w-full bg-[#18181c] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/80 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Entrar e ver compras</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        ) : (
-          /* Formulário de Registro */
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Nome completo</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  placeholder="João da Silva"
-                  value={regName}
-                  onChange={e => setRegName(e.target.value)}
-                  className="w-full bg-[#18181c] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/80 transition-colors"
-                />
-                <User className="w-4 h-4 text-zinc-600 absolute right-3.5 top-3 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">E-mail</label>
-              <div className="relative">
-                <input
-                  type="email"
-                  required
-                  placeholder="seu@email.com"
-                  value={regEmail}
-                  onChange={e => setRegEmail(e.target.value)}
-                  className="w-full bg-[#18181c] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/80 transition-colors"
-                />
-                <Mail className="w-4 h-4 text-zinc-600 absolute right-3.5 top-3 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">CPF (opcional)</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="000.000.000-00"
-                  value={regCpf}
-                  onChange={handleCpfChange}
-                  className="w-full bg-[#18181c] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/80 transition-colors font-mono"
-                />
-                <CreditCard className="w-4 h-4 text-zinc-600 absolute right-3.5 top-3 pointer-events-none" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Senha (mínimo 6 dígitos)</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  value={regPassword}
-                  onChange={e => setRegPassword(e.target.value)}
-                  className="w-full bg-[#18181c] border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/80 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium text-sm py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Criar conta e continuar</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-
-        <div className="mt-6 pt-5 border-t border-white/5 flex items-center justify-center gap-2 text-[11px] text-zinc-500">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Ambiente seguro criptografado</span>
-        </div>
-
-      </div>
+      <StoreFooter />
     </div>
+  );
+}
+
+export default function StoreCustomerLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <LoginContent />
+    </Suspense>
   );
 }

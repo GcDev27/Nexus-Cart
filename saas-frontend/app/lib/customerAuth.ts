@@ -46,6 +46,21 @@ export function removeCustomerSession(): void {
 }
 
 /**
+ * Sessão do comprador só vale na loja em que ele fez login. Como o localStorage é
+ * compartilhado entre todas as lojas do domínio, sem essa checagem um comprador logado
+ * na loja A apareceria logado na loja B.
+ */
+export function getStoreCustomerData(storeId: string | undefined): CustomerData | null {
+  const data = getCustomerData();
+  if (!data || !storeId || data.tenantId !== storeId) return null;
+  return data;
+}
+
+export function getStoreCustomerToken(storeId: string | undefined): string | null {
+  return getStoreCustomerData(storeId) ? getCustomerToken() : null;
+}
+
+/**
  * Fetch autenticado para o portal do comprador.
  */
 export async function customerFetch(

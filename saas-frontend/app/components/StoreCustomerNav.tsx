@@ -3,18 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getCustomerData, removeCustomerSession, CustomerData } from '../lib/customerAuth';
+import { getStoreCustomerData, removeCustomerSession, CustomerData } from '../lib/customerAuth';
+import { useStore } from './store/StoreContext';
 import { ShoppingBag, User, LogOut, ChevronDown } from 'lucide-react';
 
+// Usa as variáveis do tema da loja para funcionar tanto nos temas escuros quanto no claro
 export default function StoreCustomerNav({ storeSlug }: { storeSlug: string }) {
   const router = useRouter();
+  const store = useStore();
   const [customer, setCustomer] = useState<CustomerData | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sessão só existe no navegador
     setMounted(true);
-    setCustomer(getCustomerData());
+    setCustomer(getStoreCustomerData(store.id));
   }, []);
 
   const handleLogout = () => {
@@ -25,19 +29,22 @@ export default function StoreCustomerNav({ storeSlug }: { storeSlug: string }) {
   };
 
   if (!mounted) {
-    return (
-      <div className="h-9 w-28 bg-white/5 rounded-full animate-pulse" />
-    );
+    return <div className="h-9 w-28 bg-[var(--surface-hover)] animate-pulse" style={{ borderRadius: 'var(--store-radius-sm)' }} />;
   }
 
   if (!customer) {
     return (
       <Link
         href={`/loja/${storeSlug}/login`}
-        className="flex items-center gap-2 bg-[var(--color-brand)] text-white text-sm font-semibold px-4 py-2 rounded-full hover:brightness-110 transition-all shadow-lg shadow-[var(--color-brand)]/20"
+        className="flex items-center gap-2 shrink-0 text-sm font-semibold px-4 py-2 hover:brightness-110 transition-all"
+        style={{
+          background: 'var(--color-brand)',
+          color: 'var(--store-on-brand)',
+          borderRadius: 'var(--store-radius-sm)',
+        }}
       >
         <User className="w-4 h-4" />
-        <span>Minhas Compras</span>
+        <span className="hidden sm:inline">Entrar</span>
       </Link>
     );
   }
@@ -45,45 +52,50 @@ export default function StoreCustomerNav({ storeSlug }: { storeSlug: string }) {
   const firstName = customer.name?.split(' ')[0] || 'Cliente';
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full py-1.5 pl-2 pr-3.5 text-sm font-medium transition-all"
+        aria-expanded={menuOpen}
+        className="flex items-center gap-2.5 bg-[var(--surface-hover)] border border-[var(--border-color)] hover:border-[var(--border-hover)] py-1.5 pl-2 pr-3 text-sm font-medium transition-colors"
+        style={{ borderRadius: 'var(--store-radius-sm)' }}
       >
-        <div className="w-6 h-6 rounded-full bg-[var(--color-brand)] text-white text-xs flex items-center justify-center font-bold">
+        <span
+          className="w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold"
+          style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)' }}
+        >
           {firstName.charAt(0).toUpperCase()}
-        </div>
-        <span className="text-white/90 text-xs sm:text-sm font-medium">{firstName}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-white/50" />
+        </span>
+        <span className="text-[var(--text-primary)] text-xs sm:text-sm">{firstName}</span>
+        <ChevronDown className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
       </button>
 
       {menuOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setMenuOpen(false)} 
-          />
-          <div className="absolute right-0 mt-2 w-56 bg-[#16161a] border border-white/10 rounded-2xl shadow-2xl py-2 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
-            <div className="px-4 py-2.5 border-b border-white/5">
-              <p className="text-xs font-semibold text-white truncate">{customer.name}</p>
-              <p className="text-[11px] text-zinc-400 truncate">{customer.email}</p>
+          <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+          <div
+            className="absolute right-0 mt-2 w-56 bg-[var(--bg-popover)] border border-[var(--border-color)] shadow-2xl py-2 z-50 backdrop-blur-xl"
+            style={{ borderRadius: 'var(--store-radius-sm)' }}
+          >
+            <div className="px-4 py-2.5 border-b border-[var(--border-color)]">
+              <p className="text-xs font-semibold text-[var(--text-primary)] truncate">{customer.name}</p>
+              <p className="text-[11px] text-[var(--text-secondary)] truncate">{customer.email}</p>
             </div>
 
             <Link
               href={`/loja/${storeSlug}/minhas-compras`}
               onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
             >
               <ShoppingBag className="w-4 h-4 text-[var(--color-brand)]" />
-              <span>Minhas Compras</span>
+              Minhas compras
             </Link>
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sair da conta</span>
+              Sair da conta
             </button>
           </div>
         </>

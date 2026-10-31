@@ -1,6 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import StorefrontCatalog, { Product, TenantInfo } from '../../components/StorefrontCatalog';
+import StorefrontCatalog, { Product } from '../../components/StorefrontCatalog';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
@@ -17,33 +17,14 @@ async function getStoreData(storeSlug: string): Promise<Product[] | null> {
   }
 }
 
-async function getTenantData(storeSlug: string): Promise<TenantInfo | null> {
-  try {
-    const tenantRes = await fetch(`${API_BASE}/api/v1/tenants/${storeSlug}`, { cache: 'no-store' });
-    if (!tenantRes.ok) return null;
-    return tenantRes.json();
-  } catch {
-    return null;
-  }
-}
-
+// Os dados da loja (nome, tema, textos) chegam pelo StoreProvider do layout
 export default async function StorefrontPage({ params }: { params: Promise<{ storeSlug: string }> }) {
   const { storeSlug } = await params;
+  const products = await getStoreData(storeSlug);
 
-  const [tenant, products] = await Promise.all([
-    getTenantData(storeSlug),
-    getStoreData(storeSlug)
-  ]);
-
-  if (!products || !tenant) {
+  if (!products) {
     notFound();
   }
 
-  return (
-    <StorefrontCatalog
-      tenant={tenant}
-      initialProducts={products}
-      storeSlug={storeSlug}
-    />
-  );
+  return <StorefrontCatalog initialProducts={products} />;
 }

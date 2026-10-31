@@ -235,6 +235,7 @@
   --shadow-brand: 0 8px 32px -4px rgba(0,0,0,0.15);
   --header-bg: rgba(248,248,248,0.85);
   --card-hover-shadow: 0 12px 40px -8px rgba(0,0,0,0.15);
+  --surface-hover: rgba(0, 0, 0, 0.04);
   --radius-card: 16px;
 }
 
@@ -249,14 +250,77 @@
   --text-primary: #e2e8ff;
   --text-secondary: #7c85a8;
   --text-muted: #4a5070;
-  --border-color: rgba(var(--brand-rgb, 34, 197, 94), 0.2);
-  --border-hover: rgba(var(--brand-rgb, 34, 197, 94), 0.5);
   --color-brand: var(--store-primary-color, #22c55e);
+  /* Bordas seguem a cor escolhida pelo lojista (antes ficavam sempre verdes) */
+  --border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+  --border-hover: color-mix(in srgb, var(--color-brand) 60%, transparent);
   --shadow-brand: 0 0 50px -5px var(--color-brand);
   --header-bg: rgba(2,2,4,0.9);
   --card-hover-shadow: 0 0 40px -8px var(--color-brand);
+  --surface-hover: color-mix(in srgb, var(--color-brand) 8%, transparent);
   --radius-card: 8px;
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   TEMA 4: Lista Rápida — catálogo em linhas, para lojas com muitas keys
+   Visual: grafite neutro, densidade alta, foco em preço e estoque
+───────────────────────────────────────────────────────────────── */
+.theme-list {
+  --bg-primary: #131417;
+  --bg-secondary: #1a1b1f;
+  --bg-card: #1d1e23;
+  --text-primary: #ececef;
+  --text-secondary: #9a9ba4;
+  --text-muted: #5e5f68;
+  --border-color: rgba(255, 255, 255, 0.07);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --color-brand: var(--store-primary-color, #8b5cf6);
+  --shadow-brand: none;
+  --header-bg: #131417;
+  --card-hover-shadow: none;
+  --surface-hover: rgba(255, 255, 255, 0.035);
+  --radius-card: 10px;
+}
+
+.theme-glass { --surface-hover: rgba(255, 255, 255, 0.05); }
+
+/* Fundo sólido para menus suspensos (no Dark Premium os cards são translúcidos) */
+.theme-glass { --bg-popover: #17171b; }
+.theme-light { --bg-popover: #ffffff; }
+.theme-gamer { --bg-popover: #0c0c14; }
+.theme-list  { --bg-popover: #1d1e23; }
+
+/* Controle deslizante de preço da vitrine, nas cores da loja */
+.store-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-brand) var(--fill, 100%), var(--border-hover) var(--fill, 100%));
+  cursor: pointer;
+}
+.store-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  border: 3px solid var(--bg-primary);
+  box-shadow: 0 0 0 1px var(--color-brand);
+}
+.store-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  border: 3px solid var(--bg-primary);
+}
+.store-range:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 4px; }
+
+/* Listas que rolam na horizontal (categorias no celular) sem barra visível */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
 /* ─────────────────────────────────────────────────────────────────
    Global Body

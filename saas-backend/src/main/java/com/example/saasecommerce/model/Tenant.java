@@ -43,14 +43,39 @@ public class Tenant {
 
     @Column(name = "hero_title", columnDefinition = "TEXT")
     @Builder.Default
-    private String heroTitle = "Premium Digital Assets.";
+    private String heroTitle = "Produtos digitais com entrega na hora";
 
     @Column(name = "hero_description", columnDefinition = "TEXT")
     @Builder.Default
-    private String heroDescription = "Elevate seu projeto com produtos, scripts e licenças de alta qualidade desenvolvidos por especialistas.";
+    private String heroDescription = "Pague com Pix e receba sua compra na mesma tela, a qualquer hora.";
 
     @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
+
+    // Imagem de capa exibida no topo da vitrine
+    @Column(name = "banner_url", columnDefinition = "TEXT")
+    private String bannerUrl;
+
+    // Cantos dos cards e botões: rounded, soft ou sharp
+    @Column(name = "corner_style")
+    private String cornerStyle;
+
+    // Faixa de aviso no topo da loja (ex.: "Cupom de 10% no Pix")
+    @Column(name = "announcement_text")
+    private String announcementText;
+
+    @Column(name = "footer_text", columnDefinition = "TEXT")
+    private String footerText;
+
+    // Canais de contato exibidos no rodapé e na página do produto
+    @Column(name = "discord_url")
+    private String discordUrl;
+
+    @Column(name = "whatsapp_url")
+    private String whatsappUrl;
+
+    @Column(name = "instagram_url")
+    private String instagramUrl;
     // ---------------------------------------------
 
     // Esse método roda automaticamente antes de salvar no banco para preencher a data

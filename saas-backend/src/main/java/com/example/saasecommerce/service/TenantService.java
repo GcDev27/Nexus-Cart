@@ -1,9 +1,13 @@
 package com.example.saasecommerce.service;
 
+import com.example.saasecommerce.dto.TenantSettingsRequest;
 import com.example.saasecommerce.model.Tenant;
 import com.example.saasecommerce.repository.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -38,18 +42,86 @@ public class TenantService {
                 .orElseThrow(() -> new IllegalArgumentException("Loja não encontrada!"));
     }
 
+    private static final Set<String> THEMES = Set.of("theme-glass", "theme-light", "theme-gamer", "theme-list");
+    private static final Set<String> CORNER_STYLES = Set.of("rounded", "soft", "sharp");
+    private static final Set<String> FONTS = Set.of(
+            "Inter", "Roboto", "Playfair Display", "Poppins", "Nunito", "Raleway", "Montserrat", "Space Grotesk");
+    private static final Pattern HEX_COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
+    // Imagens em base64 (upload do painel) podem ser grandes; limita para não estourar o banco
+    private static final int MAX_IMAGE_LENGTH = 3_000_000;
+
     // Regra de Negócio 3: Atualizar configurações da loja
-    public Tenant updateTenantSettings(java.util.UUID id, String theme, String primaryColor, String font, String heroTitle, String heroDescription, String logoUrl) {
+    public Tenant updateTenantSettings(java.util.UUID id, TenantSettingsRequest req) {
         Tenant tenant = tenantRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Loja não encontrada!"));
-                
-        if (theme != null) tenant.setTheme(theme);
-        if (primaryColor != null) tenant.setPrimaryColor(primaryColor);
-        if (font != null) tenant.setFont(font);
-        if (heroTitle != null) tenant.setHeroTitle(heroTitle);
-        if (heroDescription != null) tenant.setHeroDescription(heroDescription);
-        if (logoUrl != null) tenant.setLogoUrl(logoUrl);
+
+        if (req.name() != null) {
+            String name = req.name().trim();
+            if (name.length() < 2 || name.length() > 60) {
+                throw new IllegalArgumentException("O nome da loja deve ter entre 2 e 60 caracteres.");
+            }
+            tenant.setName(name);
+        }
+        if (req.theme() != null) tenant.setTheme(requireOneOf(req.theme(), THEMES, "Template inválido."));
+        if (req.cornerStyle() != null) tenant.setCornerStyle(requireOneOf(req.cornerStyle(), CORNER_STYLES, "Estilo de cantos inválido."));
+        if (req.font() != null) tenant.setFont(requireOneOf(req.font(), FONTS, "Fonte não suportada."));
+        if (req.primaryColor() != null) {
+            if (!HEX_COLOR.matcher(req.primaryColor()).matches()) {
+                throw new IllegalArgumentException("Cor inválida. Use o formato #RRGGBB.");
+            }
+            tenant.setPrimaryColor(req.primaryColor().toLowerCase());
+        }
+
+        if (req.heroTitle() != null) tenant.setHeroTitle(limitText(req.heroTitle(), 80, "Título"));
+        if (req.heroDescription() != null) tenant.setHeroDescription(limitText(req.heroDescription(), 200, "Descrição"));
+        if (req.announcementText() != null) tenant.setAnnouncementText(blankToNull(limitText(req.announcementText(), 120, "Aviso")));
+        if (req.footerText() != null) tenant.setFooterText(blankToNull(limitText(req.footerText(), 300, "Texto do rodapé")));
+
+        if (req.logoUrl() != null) tenant.setLogoUrl(validImage(req.logoUrl(), "Logo"));
+        if (req.bannerUrl() != null) tenant.setBannerUrl(validImage(req.bannerUrl(), "Banner"));
+
+        if (req.discordUrl() != null) tenant.setDiscordUrl(validLink(req.discordUrl(), "Discord"));
+        if (req.whatsappUrl() != null) tenant.setWhatsappUrl(validLink(req.whatsappUrl(), "WhatsApp"));
+        if (req.instagramUrl() != null) tenant.setInstagramUrl(validLink(req.instagramUrl(), "Instagram"));
 
         return tenantRepository.save(tenant);
+    }
+
+    private static String requireOneOf(String value, Set<String> allowed, String error) {
+        if (!allowed.contains(value)) throw new IllegalArgumentException(error);
+        return value;
+    }
+
+    private static String limitText(String value, int max, String field) {
+        String trimmed = value.trim();
+        if (trimmed.length() > max) {
+            throw new IllegalArgumentException(field + " pode ter no máximo " + max + " caracteres.");
+        }
+        return trimmed;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    // Só aceita imagem enviada pelo painel (data:image/...) ou link https
+    private static String validImage(String value, String field) {
+        String v = value.trim();
+        if (v.isEmpty()) return null;
+        if (v.length() > MAX_IMAGE_LENGTH) throw new IllegalArgumentException(field + " muito grande. Envie uma imagem menor.");
+        if (!v.startsWith("data:image/") && !v.startsWith("https://")) {
+            throw new IllegalArgumentException(field + " inválido.");
+        }
+        return v;
+    }
+
+    // Links públicos: só https, para não permitir "javascript:" ou outros esquemas na vitrine
+    private static String validLink(String value, String field) {
+        String v = value.trim();
+        if (v.isEmpty()) return null;
+        if (v.length() > 300 || !v.startsWith("https://")) {
+            throw new IllegalArgumentException("Link do " + field + " inválido. Use um endereço começando com https://");
+        }
+        return v;
     }
 }

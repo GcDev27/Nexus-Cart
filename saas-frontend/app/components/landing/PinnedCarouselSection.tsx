@@ -1,10 +1,6 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { 
-  Key, Palette, QrCode, UserCheck, 
-  TrendingUp, Check, ShieldCheck, Zap, Copy
-} from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -13,8 +9,17 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+const STORE_THEMES = [
+  { name: 'Dark Premium', bg: '#09090b', card: '#18181b', accent: '#8b5cf6', text: '#fafafa' },
+  { name: 'Clean Light', bg: '#f8f8f8', card: '#ffffff', accent: '#2563eb', text: '#111111' },
+  { name: 'Gamer Neon', bg: '#020204', card: '#0c0c14', accent: '#22c55e', text: '#e2e8ff' },
+];
+
+const cardClass =
+  'feature-bento-card rounded-2xl bg-ink-raised border border-ink-line hover:border-violet/50 transition-colors duration-300 p-7 sm:p-8';
+
 export default function PinnedCarouselSection() {
-  const sectionRef = useRef<HTMLDivElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useGSAP(
     () => {
@@ -23,251 +28,148 @@ export default function PinnedCarouselSection() {
 
       const mm = gsap.matchMedia();
 
-      // Desktop (≥ 768px): Parallax com Scrub com velocidades independentes
-      mm.add('(min-width: 768px)', () => {
+      // Colunas rolam em velocidades diferentes (só desktop e sem preferência por menos movimento)
+      mm.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
         gsap.to('.parallax-col-1', {
-          y: -50,
+          y: -40,
           ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 1.2,
-          },
+          scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.2 },
         });
-
         gsap.to('.parallax-col-2', {
-          y: -120,
+          y: -110,
           ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 1.2,
-          },
+          scrollTrigger: { trigger: section, start: 'top bottom', end: 'bottom top', scrub: 1.2 },
         });
       });
 
-      // Entrada suave de cada card com Blur 10px -> 0px + Deslocamento Y
-      const cards = gsap.utils.toArray<HTMLElement>('.feature-bento-card');
-      cards.forEach((card) => {
-        gsap.fromTo(
-          card,
-          {
-            y: 40,
-            opacity: 0,
-            filter: 'blur(10px)',
-          },
-          {
-            y: 0,
-            opacity: 1,
-            filter: 'blur(0px)',
-            duration: 0.9,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: card,
-              start: 'top 88%',
-              toggleActions: 'play none none none',
-            },
-          }
-        );
+      // Cada card entra desfocado e sobe até o lugar quando aparece na tela
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.utils.toArray<HTMLElement>('.feature-bento-card').forEach((card) => {
+          gsap.fromTo(
+            card,
+            { y: 40, opacity: 0, filter: 'blur(10px)' },
+            {
+              y: 0,
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.9,
+              ease: 'power3.out',
+              scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' },
+            }
+          );
+        });
+
+        // Linhas de estoque entram uma a uma
+        gsap.from('.stock-line', {
+          x: -12,
+          opacity: 0,
+          stagger: 0.1,
+          duration: 0.5,
+          ease: 'power2.out',
+          scrollTrigger: { trigger: '.stock-list', start: 'top 85%' },
+        });
       });
     },
     { scope: sectionRef }
   );
 
   return (
-    <section
-      id="recursos"
-      ref={sectionRef}
-      className="relative py-24 sm:py-32 bg-[#090a0f] overflow-hidden border-b border-white/[0.08]"
-    >
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
-        
-        {/* Section Header Editorial */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 sm:mb-20 pb-8 border-b border-white/[0.06]">
-          <div>
-            <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-              [ 02 // RECURSOS DA PLATAFORMA ]
-            </div>
-            <h2 className="font-display text-3xl sm:text-5xl font-bold text-white tracking-tight leading-[1.1]">
-              Feito para você vender. <br className="hidden sm:inline" />
-              O resto roda sozinho.
-            </h2>
-          </div>
-          <p className="text-sm text-neutral-400 max-w-md font-normal leading-relaxed">
-            Estrutura desenhada para quem comercializa seriais, licenças e produtos digitais. Sem necessidade de programação ou conferência manual.
+    <section id="recursos" ref={sectionRef} className="relative border-b border-ink-line overflow-hidden scroll-mt-16">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28">
+        <div className="grid md:grid-cols-2 gap-6 md:gap-10 items-end">
+          <h2 className="text-3xl sm:text-[2.6rem] font-semibold tracking-[-0.025em] text-mist leading-tight">
+            Você cuida dos produtos. A entrega roda sozinha.
+          </h2>
+          <p className="text-[15px] leading-relaxed text-mist-dim max-w-md">
+            Tudo o que uma loja de produtos digitais precisa para vender sem você conferir pagamento ou mandar chave
+            no privado.
           </p>
         </div>
 
-        {/* Parallax Bento Grid (2 Colunas com velocidades assimétricas) */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 sm:gap-8 items-start">
-          
-          {/* Coluna 1 (Esquerda) */}
-          <div className="parallax-col-1 md:col-span-6 flex flex-col gap-6 sm:gap-8 will-change-transform">
-            
-            {/* Card 1: Estoque de Chaves & Seriais */}
-            <div className="feature-bento-card group p-7 sm:p-8 rounded-2xl bg-[#0f1017] border border-white/[0.08] hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[11px] text-neutral-400 tracking-wider">
-                  // 01 ESTOQUE DE LICENÇAS
-                </span>
-                <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                  ENTREGA IMEDIATA
-                </span>
-              </div>
-
-              <h3 className="font-display text-2xl font-bold text-white mb-2 tracking-tight">
-                Estoque de Chaves por Variação
-              </h3>
-              <p className="text-sm text-neutral-400 leading-relaxed mb-6 font-normal">
-                Suba centenas de chaves seriais em lote. Cada variação de produto (ex: Mensal, Anual, Vitalício) consome uma linha de estoque assim que o Pix é liquidado.
+        <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <div className="parallax-col-1 flex flex-col gap-6 will-change-transform">
+            {/* Estoque */}
+            <article className={cardClass}>
+              <h3 className="text-xl font-semibold text-mist">Estoque de chaves por variação</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-mist-dim">
+                Cole centenas de chaves de uma vez. Cada variação tem a própria fila, e o painel mostra quantas ainda
+                estão disponíveis.
               </p>
+              <ul className="stock-list mt-6 rounded-xl bg-ink border border-ink-line divide-y divide-ink-line text-sm">
+                {[
+                  { key: 'VIP-3HTM-8WQA-K2ZD', status: 'Disponível' },
+                  { key: 'VIP-9PLC-4RXN-T6BE', status: 'Disponível' },
+                  { key: 'VIP-7KQ2-9XMP-4RLA', status: 'Entregue' },
+                ].map((line) => (
+                  <li key={line.key} className="stock-line flex items-center justify-between gap-3 px-4 py-3">
+                    <span
+                      className={`font-mono text-[13px] ${
+                        line.status === 'Entregue' ? 'text-mist-dim line-through' : 'text-mist'
+                      }`}
+                    >
+                      {line.key}
+                    </span>
+                    <span className={`text-xs ${line.status === 'Entregue' ? 'text-mist-dim' : 'text-paid'}`}>
+                      {line.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </article>
 
-              {/* Mockup de Linha de Estoque */}
-              <div className="rounded-xl bg-[#08090d] border border-white/[0.06] p-4 font-mono text-xs">
-                <div className="flex items-center justify-between text-neutral-500 text-[10px] pb-2 border-b border-white/[0.06] uppercase tracking-wider">
-                  <span>Chave / Licença</span>
-                  <span>Status</span>
-                </div>
-                <div className="divide-y divide-white/[0.04]">
-                  <div className="py-2.5 flex items-center justify-between">
-                    <span className="text-neutral-300">NX-9941-PRO-BR</span>
-                    <span className="text-[10px] text-emerald-400 font-sans font-semibold">● Disponível</span>
-                  </div>
-                  <div className="py-2.5 flex items-center justify-between">
-                    <span className="text-neutral-300">NX-9942-PRO-BR</span>
-                    <span className="text-[10px] text-emerald-400 font-sans font-semibold">● Disponível</span>
-                  </div>
-                  <div className="py-2.5 flex items-center justify-between text-neutral-400">
-                    <span className="line-through">NX-9940-PRO-BR</span>
-                    <span className="text-[10px] text-neutral-400 font-sans">Entregue via Pix</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Portal do Cliente */}
-            <div className="feature-bento-card group p-7 sm:p-8 rounded-2xl bg-[#0f1017] border border-white/[0.08] hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[11px] text-neutral-400 tracking-wider">
-                  // 02 AUTOATENDIMENTO
-                </span>
-                <span className="font-mono text-[10px] text-neutral-300 bg-white/[0.05] px-2.5 py-0.5 rounded-full border border-white/10">
-                  ZERO SUPORTE
-                </span>
-              </div>
-
-              <h3 className="font-display text-2xl font-bold text-white mb-2 tracking-tight">
-                Portal do Comprador (&quot;Minhas Compras&quot;)
-              </h3>
-              <p className="text-sm text-neutral-400 leading-relaxed mb-6 font-normal">
-                Seus clientes nunca perdem o que compraram. Eles acessam a área de autoatendimento da sua loja, digitam o e-mail e resgatam as chaves seriais a qualquer momento.
+            {/* Área do comprador */}
+            <article className={cardClass}>
+              <h3 className="text-xl font-semibold text-mist">Área &quot;Minhas compras&quot;</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-mist-dim">
+                O comprador cria uma conta na sua loja e encontra todas as chaves que comprou quando precisar. Menos
+                gente pedindo a chave de novo no seu Discord.
               </p>
+            </article>
 
-              <div className="p-4 rounded-xl bg-[#08090d] border border-white/[0.06] flex items-center justify-between text-xs">
-                <div>
-                  <div className="font-semibold text-white font-sans">Histórico de Pedidos Seguro</div>
-                  <div className="text-[11px] text-neutral-400 font-mono mt-0.5">lojaseu-site.com/minhas-compras</div>
-                </div>
-                <span className="font-mono text-[11px] text-emerald-400 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
-                  Auto-resgate
-                </span>
-              </div>
-            </div>
-
+            {/* Entrega manual */}
+            <article className={cardClass}>
+              <h3 className="text-xl font-semibold text-mist">Entrega manual quando precisar</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-mist-dim">
+                Vende algo que não é chave, como um serviço ou um item no jogo? Marque a variação como entrega manual e
+                escreva a mensagem que o comprador recebe depois de pagar.
+              </p>
+            </article>
           </div>
 
-          {/* Coluna 2 (Direita) */}
-          <div className="parallax-col-2 md:col-span-6 flex flex-col gap-6 sm:gap-8 will-change-transform">
-            
-            {/* Card 3: Vitrine e Temas Nativos */}
-            <div className="feature-bento-card group p-7 sm:p-8 rounded-2xl bg-[#0f1017] border border-white/[0.08] hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[11px] text-neutral-400 tracking-wider">
-                  // 03 CUSTOMIZAÇÃO NO-CODE
-                </span>
-                <span className="font-mono text-[10px] text-neutral-300 bg-white/[0.05] px-2.5 py-0.5 rounded-full border border-white/10">
-                  3 TEMAS NATIVOS
-                </span>
-              </div>
-
-              <h3 className="font-display text-2xl font-bold text-white mb-2 tracking-tight">
-                Vitrine Pronta em Segundos
-              </h3>
-              <p className="text-sm text-neutral-400 leading-relaxed mb-6 font-normal">
-                Alterne entre Dark Premium, Clean Light e Gamer Neon pelo painel. Escolha sua cor de destaque, conecte tipografias do Google Fonts e envie seu logotipo sem programar nada.
+          <div className="parallax-col-2 flex flex-col gap-6 will-change-transform md:mt-24">
+            {/* Vitrine */}
+            <article className={cardClass}>
+              <h3 className="text-xl font-semibold text-mist">Vitrine com a cara da sua marca</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-mist-dim">
+                Escolha um dos três temas, a cor de destaque, a fonte, o texto de abertura e o seu logo. Sem código.
               </p>
-
-              <div className="grid grid-cols-3 gap-2.5 pt-1">
-                <div className="p-3 rounded-lg bg-[#08090d] border border-white/15 text-center">
-                  <div className="w-3 h-3 rounded-full bg-white mx-auto mb-1.5" />
-                  <span className="text-xs text-white font-medium block">Dark</span>
-                  <span className="text-[10px] text-neutral-400 font-mono">Premium</span>
-                </div>
-                <div className="p-3 rounded-lg bg-[#08090d] border border-white/[0.06] text-center">
-                  <div className="w-3 h-3 rounded-full bg-cyan-400 mx-auto mb-1.5" />
-                  <span className="text-xs text-white font-medium block">Gamer</span>
-                  <span className="text-[10px] text-neutral-400 font-mono">Neon</span>
-                </div>
-                <div className="p-3 rounded-lg bg-[#08090d] border border-white/[0.06] text-center">
-                  <div className="w-3 h-3 rounded-full bg-neutral-400 mx-auto mb-1.5" />
-                  <span className="text-xs text-white font-medium block">Clean</span>
-                  <span className="text-[10px] text-neutral-400 font-mono">Light</span>
-                </div>
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                {STORE_THEMES.map((theme) => (
+                  <figure key={theme.name}>
+                    <div
+                      aria-hidden
+                      className="aspect-[4/5] rounded-lg p-2 flex flex-col gap-1.5 border border-ink-line"
+                      style={{ background: theme.bg }}
+                    >
+                      <div className="h-1.5 w-1/2 rounded-full" style={{ background: theme.text, opacity: 0.8 }} />
+                      <div className="flex-1 rounded-md" style={{ background: theme.card }} />
+                      <div className="h-3 rounded" style={{ background: theme.accent }} />
+                    </div>
+                    <figcaption className="mt-2 text-xs text-mist-dim text-center">{theme.name}</figcaption>
+                  </figure>
+                ))}
               </div>
-            </div>
+            </article>
 
-            {/* Card 4: Checkout com Pix */}
-            <div className="feature-bento-card group p-7 sm:p-8 rounded-2xl bg-[#0f1017] border border-white/[0.08] hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[11px] text-neutral-400 tracking-wider">
-                  // 04 CHECKOUT TRANSPARENTE
-                </span>
-                <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                  &lt; 3 SEGUNDOS
-                </span>
-              </div>
-
-              <h3 className="font-display text-2xl font-bold text-white mb-2 tracking-tight">
-                Pix com Confirmação Imediata
-              </h3>
-              <p className="text-sm text-neutral-400 leading-relaxed mb-6 font-normal">
-                QR Code dinâmico na tela e Pix Copia e Cola gerado na hora. O webhook oficial da adquirente aprova e a chave serial é liberada antes do comprador fechar a aba.
+            {/* Painel */}
+            <article className={cardClass}>
+              <h3 className="text-xl font-semibold text-mist">Painel de vendas</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-mist-dim">
+                Veja faturamento, pedidos e ticket médio dos últimos 7, 30 ou 90 dias, e quais produtos mais vendem.
               </p>
-
-              <div className="p-3.5 rounded-xl bg-[#08090d] border border-white/[0.06] flex items-center justify-between font-mono text-xs">
-                <span className="text-neutral-400">Webhook Status:</span>
-                <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  200 OK • Liquidação instantânea
-                </span>
-              </div>
-            </div>
-
-            {/* Card 5: Métricas em Tempo Real */}
-            <div className="feature-bento-card group p-7 sm:p-8 rounded-2xl bg-[#0f1017] border border-white/[0.08] hover:border-white/20 transition-all duration-300 relative overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <span className="font-mono text-[11px] text-neutral-400 tracking-wider">
-                  // 05 ANALYTICS NATIVO
-                </span>
-                <span className="font-mono text-[10px] text-neutral-300 bg-white/[0.05] px-2.5 py-0.5 rounded-full border border-white/10">
-                  TEMPO REAL
-                </span>
-              </div>
-
-              <h3 className="font-display text-2xl font-bold text-white mb-2 tracking-tight">
-                Métricas Consolidadas no Painel
-              </h3>
-              <p className="text-sm text-neutral-400 leading-relaxed font-normal">
-                Acompanhe receita total, ticket médio e volume de transações por período (7D, 30D, 90D, 1A) com filtros simples e exportação de dados em um clique.
-              </p>
-            </div>
-
+            </article>
           </div>
-
         </div>
-
       </div>
     </section>
   );

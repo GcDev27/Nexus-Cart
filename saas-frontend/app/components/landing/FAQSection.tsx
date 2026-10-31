@@ -3,88 +3,78 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
+const FAQS = [
+  {
+    q: 'O que dá para vender no NexusCart?',
+    a: 'Produtos digitais em geral: keys de jogos e servidores, licenças de software, contas de acesso, gift cards e cursos. Se o produto é uma chave ou um código, a entrega é automática. Se não for, você pode usar a entrega manual com uma mensagem para o comprador.',
+  },
+  {
+    q: 'O NexusCart fica com alguma porcentagem das vendas?',
+    a: 'Não. Você paga só a mensalidade do plano. O Pix é cobrado na sua conta do Mercado Pago, e só as taxas do próprio Mercado Pago são descontadas.',
+  },
+  {
+    q: 'Como funciona o teste grátis?',
+    a: 'Você cria a loja e usa qualquer plano por 7 dias, sem cadastrar cartão de crédito.',
+  },
+  {
+    q: 'Como as chaves são entregues?',
+    a: 'Cada variação do produto (por exemplo 30 dias, 90 dias e vitalícia) tem a sua lista de chaves. Quando um Pix é aprovado, a próxima chave da lista é marcada como entregue e aparece na tela do comprador. A mesma chave nunca é entregue duas vezes.',
+  },
+  {
+    q: 'E se o comprador fechar a página antes de copiar a chave?',
+    a: 'Se ele comprou logado, a chave fica salva em "Minhas compras", a área do comprador da sua loja. Por isso vale incentivar o cadastro antes da compra.',
+  },
+  {
+    q: 'Quais formas de pagamento são aceitas?',
+    a: 'Hoje, Pix pela sua conta do Mercado Pago. Efí Bank, Asaas e cartão de crédito estão em desenvolvimento.',
+  },
+  {
+    q: 'Preciso saber programar para personalizar a loja?',
+    a: 'Não. No painel você escolhe entre três temas (Dark Premium, Clean Light e Gamer Neon), a cor de destaque, a fonte, o texto de abertura e o logo da loja.',
+  },
+];
+
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  const faqs = [
-    {
-      q: 'O que é o NexusCart e como ele funciona?',
-      a: 'O NexusCart é uma plataforma para criação de lojas focadas em produtos digitais, licenças de software e chaves seriais (keys). Você cadastra suas listas de chaves, conecta sua própria conta do Mercado Pago ou Efí Bank e, assim que o comprador paga via Pix, o sistema aprova o pedido e revela o serial imediatamente na tela.',
-    },
-    {
-      q: 'O NexusCart cobra taxa ou porcentagem sobre as vendas?',
-      a: 'Não. Você paga apenas o valor fixo da mensalidade do plano escolhido (a partir de R$ 20/mês). Todo o faturamento das suas vendas cai direto na sua conta do banco/gateway sem nenhuma retenção por parte do NexusCart.',
-    },
-    {
-      q: 'É grátis para testar?',
-      a: 'Sim! Você tem 7 dias de teste grátis em qualquer plano, sem necessidade de cadastrar cartão de crédito.',
-    },
-    {
-      q: 'Como funciona o estoque e a entrega de chaves (keys)?',
-      a: 'Você cadastra o produto e suas variações (por exemplo: Chave 30 Dias, Chave Anual, Chave Vitalícia) e insere uma lista de códigos. A cada Pix aprovado via webhook, uma linha é consumida e entregue ao comprador, sem risco de chaves duplicadas.',
-    },
-    {
-      q: 'O que é a área "Minhas Compras"?',
-      a: 'É o portal de autoatendimento nativo da sua loja (/minhas-compras). O comprador faz login com o e-mail utilizado na compra e tem acesso a todo o histórico de transações e chaves que adquiriu, evitando que você precise prestar suporte manual.',
-    },
-    {
-      q: 'Preciso saber programar para personalizar o visual?',
-      a: 'Não. Pelo painel de administração você escolhe entre 3 temas visuais (Dark Premium, Clean Light ou Gamer Neon), define as cores da sua marca com color picker, seleciona fontes do Google Fonts e faz upload da sua logo.',
-    },
-    {
-      q: 'Quais gateways de pagamento são suportados?',
-      a: 'Mercado Pago, Efí Bank (antiga Gerencianet), Asaas e Stripe. Todas as integrações são nativas e você só precisa colar suas chaves de API no painel.',
-    },
-  ];
-
   return (
-    <section id="faq" className="py-24 sm:py-32 bg-[#090a0f] border-b border-white/[0.08]">
-      <div className="max-w-4xl mx-auto px-6">
-        
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-            [ 05 // DÚVIDAS FREQUENTES ]
-          </div>
-          <h2 className="font-display text-3xl sm:text-5xl font-bold text-white tracking-tight">
-            Perguntas Frequentes
-          </h2>
-          <p className="mt-3 text-sm text-neutral-400">
-            Respostas diretas sobre funcionamento, pagamentos e entrega automática.
-          </p>
-        </div>
+    <section id="faq" className="border-b border-ink-line scroll-mt-16">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20 sm:py-28 grid lg:grid-cols-12 gap-10 lg:gap-16">
+        <h2 className="lg:col-span-4 text-3xl sm:text-[2.6rem] font-semibold tracking-[-0.025em] text-mist leading-tight">
+          Dúvidas frequentes
+        </h2>
 
-        {/* Accordions */}
-        <div className="space-y-3">
-          {faqs.map((faq, idx) => {
+        <div className="lg:col-span-8 divide-y divide-ink-line border-y border-ink-line">
+          {FAQS.map((faq, idx) => {
             const isOpen = openIndex === idx;
+            const panelId = `faq-panel-${idx}`;
 
             return (
-              <div
-                key={idx}
-                className="rounded-2xl border border-white/[0.08] bg-[#0f1017] overflow-hidden transition-all duration-200"
-              >
-                <button
-                  onClick={() => setOpenIndex(isOpen ? null : idx)}
-                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 font-semibold text-sm sm:text-base text-white hover:text-neutral-200 transition-colors cursor-pointer"
-                >
-                  <span className="font-display tracking-tight">{faq.q}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 text-neutral-400 shrink-0 transition-transform duration-200 ${
-                      isOpen ? 'rotate-180 text-white' : ''
-                    }`}
-                  />
-                </button>
+              <div key={faq.q}>
+                <h3>
+                  <button
+                    type="button"
+                    onClick={() => setOpenIndex(isOpen ? null : idx)}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
+                    className="w-full py-5 text-left flex items-center justify-between gap-4 text-base sm:text-[17px] font-medium text-mist hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-hi rounded"
+                  >
+                    {faq.q}
+                    <ChevronDown
+                      aria-hidden
+                      className={`w-5 h-5 text-mist-dim shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                </h3>
                 {isOpen && (
-                  <div className="px-5 sm:px-6 pb-6 text-xs sm:text-sm text-neutral-400 leading-relaxed border-t border-white/[0.04] pt-4">
+                  <p id={panelId} className="pb-6 pr-8 text-[15px] leading-relaxed text-mist-dim max-w-[62ch]">
                     {faq.a}
-                  </div>
+                  </p>
                 )}
               </div>
             );
           })}
         </div>
-
       </div>
     </section>
   );

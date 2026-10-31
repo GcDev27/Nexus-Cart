@@ -13,6 +13,9 @@ export default function SmoothScroll({ children }: { children: React.ReactNode }
   const lenisRef = useRef<Lenis | null>(null);
 
   useEffect(() => {
+    // Quem pediu menos movimento no sistema fica com o scroll nativo
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
     // Inicializa o Lenis para scroll suave amanteigado
     const lenis = new Lenis({
       duration: 1.15,

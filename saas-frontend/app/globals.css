@@ -5,6 +5,18 @@
    Obsidian Orbit — Design System Tokens (Stitch Design Specification)
 ───────────────────────────────────────────────────────────────── */
 @theme {
+  /* NexusCart — paleta tirada da logo */
+  --color-ink: #111217;          /* grafite do ícone (fundo) */
+  --color-ink-raised: #18191f;   /* superfícies sobre o fundo */
+  --color-ink-line: #26272f;     /* bordas e divisórias */
+  --color-mist: #e7e7e9;         /* cinza do "Nexus" no logotipo */
+  --color-mist-dim: #9d9daa;     /* texto secundário */
+  --color-violet: #9d3ef4;       /* violeta central do N */
+  --color-violet-hi: #b455ff;    /* ponta magenta do N */
+  --color-violet-lo: #683ede;    /* ponta índigo do N */
+  --color-receipt: #f4f2f8;      /* papel do comprovante */
+  --color-paid: #4fd39a;         /* só para o status "pago" */
+
   --color-surface: #121317;
   --color-surface-dim: #121317;
   --color-surface-bright: #38393d;
@@ -53,22 +65,22 @@
   --color-on-background: #e3e2e7;
   --color-surface-variant: #343439;
 
-  --font-sans: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
-  --font-display: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-sans: var(--font-onest), "Onest", sans-serif;
+  --font-display: var(--font-onest), "Onest", sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
 
-  --font-headline-lg: var(--font-space-grotesk), "Space Grotesk", sans-serif;
-  --font-headline-md: var(--font-space-grotesk), "Space Grotesk", sans-serif;
-  --font-metric-kpi: var(--font-space-grotesk), "Space Grotesk", sans-serif;
-  --font-display-hero: var(--font-space-grotesk), "Space Grotesk", sans-serif;
-  --font-headline-lg-mobile: var(--font-space-grotesk), "Space Grotesk", sans-serif;
+  --font-headline-lg: var(--font-onest), "Onest", sans-serif;
+  --font-headline-md: var(--font-onest), "Onest", sans-serif;
+  --font-metric-kpi: var(--font-onest), "Onest", sans-serif;
+  --font-display-hero: var(--font-onest), "Onest", sans-serif;
+  --font-headline-lg-mobile: var(--font-onest), "Onest", sans-serif;
 
-  --font-body-lg: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
-  --font-body-md: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
-  --font-body-sm: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
-  --font-label-md: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
-  --font-label-sm: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
-  --font-label-xs: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
+  --font-body-lg: var(--font-onest), "Onest", sans-serif;
+  --font-body-md: var(--font-onest), "Onest", sans-serif;
+  --font-body-sm: var(--font-onest), "Onest", sans-serif;
+  --font-label-md: var(--font-onest), "Onest", sans-serif;
+  --font-label-sm: var(--font-onest), "Onest", sans-serif;
+  --font-label-xs: var(--font-onest), "Onest", sans-serif;
 
   --spacing-space-xs: 0.25rem;
   --spacing-space-sm: 0.5rem;
@@ -85,7 +97,7 @@
 
 /* Tipografia Estilizada Obsidian Orbit */
 .font-display-hero {
-  font-family: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 2.25rem;
   line-height: 2.75rem;
   letter-spacing: -0.03em;
@@ -93,7 +105,7 @@
 }
 
 .font-headline-lg {
-  font-family: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 1.75rem;
   line-height: 2.25rem;
   letter-spacing: -0.025em;
@@ -101,7 +113,7 @@
 }
 
 .font-headline-lg-mobile {
-  font-family: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 1.375rem;
   line-height: 1.75rem;
   letter-spacing: -0.02em;
@@ -109,7 +121,7 @@
 }
 
 .font-headline-md {
-  font-family: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 1.25rem;
   line-height: 1.75rem;
   letter-spacing: -0.02em;
@@ -117,7 +129,7 @@
 }
 
 .font-metric-kpi {
-  font-family: var(--font-plus-jakarta-sans), "Plus Jakarta Sans", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 1.5rem;
   line-height: 2rem;
   letter-spacing: -0.02em;
@@ -125,28 +137,28 @@
 }
 
 .font-body-lg {
-  font-family: var(--font-inter), "Inter", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 1rem;
   line-height: 1.5rem;
   font-weight: 400;
 }
 
 .font-body-md {
-  font-family: var(--font-inter), "Inter", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 400;
 }
 
 .font-body-sm {
-  font-family: var(--font-inter), "Inter", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 0.75rem;
   line-height: 1.125rem;
   font-weight: 400;
 }
 
 .font-label-md {
-  font-family: var(--font-inter), "Inter", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 0.875rem;
   line-height: 1.25rem;
   letter-spacing: -0.01em;
@@ -154,7 +166,7 @@
 }
 
 .font-label-sm {
-  font-family: var(--font-inter), "Inter", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 0.75rem;
   line-height: 1rem;
   letter-spacing: 0.01em;
@@ -162,7 +174,7 @@
 }
 
 .font-label-xs {
-  font-family: var(--font-inter), "Inter", sans-serif;
+  font-family: var(--font-onest), "Onest", sans-serif;
   font-size: 0.6875rem;
   line-height: 0.875rem;
   letter-spacing: 0.04em;

@@ -2,7 +2,6 @@
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
@@ -12,81 +11,60 @@ if (typeof window !== 'undefined') {
 }
 
 export default function LandingCTA() {
-  const containerRef = useRef<HTMLElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useGSAP(
     () => {
-      const section = containerRef.current;
-      if (!section) return;
-
-      gsap.fromTo(
-        '.cta-inner',
-        {
-          y: 40,
-          scale: 0.97,
-          opacity: 0,
-        },
-        {
-          y: 0,
-          scale: 1,
-          opacity: 1,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top 80%',
-            toggleActions: 'play none none none',
-          },
-        }
-      );
+      const mm = gsap.matchMedia();
+      mm.add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.fromTo(
+          '.cta-inner',
+          { y: 40, scale: 0.97, opacity: 0 },
+          {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            duration: 0.9,
+            ease: 'power3.out',
+            scrollTrigger: { trigger: sectionRef.current, start: 'top 80%', toggleActions: 'play none none none' },
+          }
+        );
+      });
     },
-    { scope: containerRef }
+    { scope: sectionRef }
   );
 
   return (
-    <section
-      ref={containerRef}
-      className="relative py-28 sm:py-36 bg-[#090a0f] text-center overflow-hidden border-b border-white/[0.08]"
-    >
-      <div className="cta-inner max-w-4xl mx-auto px-6 relative z-10 will-change-transform">
-        
-        <div className="font-mono text-[11px] uppercase tracking-widest text-neutral-400 mb-3">
-          [ 06 // COMECE AGORA ]
-        </div>
+    <section ref={sectionRef} className="relative border-b border-ink-line overflow-hidden text-center">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-[800px] max-w-[150%] h-[400px] rounded-full bg-violet-lo/25 blur-[130px]"
+      />
 
-        <h2 className="font-display text-4xl sm:text-6xl md:text-7xl font-bold text-white tracking-tight leading-[1.06] mb-6">
-          Sua loja pronta para vender <br className="hidden sm:inline" />
-          em menos de 15 minutos.
+      <div className="cta-inner relative max-w-4xl mx-auto px-5 sm:px-8 py-24 sm:py-36 will-change-transform">
+        <h2 className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-[-0.035em] text-mist leading-[1.05]">
+          Coloque sua loja no ar ainda hoje
         </h2>
-
-        <p className="font-sans text-base sm:text-lg text-neutral-400 max-w-xl mx-auto mb-10 leading-relaxed font-normal">
-          Cadastre suas chaves seriais, conecte seu Pix e deixe a plataforma automatizar todo o fluxo de entrega.
+        <p className="mt-6 mx-auto max-w-xl text-base sm:text-lg leading-relaxed text-mist-dim">
+          Cadastre um produto, cole suas chaves e conecte o Mercado Pago. São 7 dias grátis para testar com vendas de
+          verdade.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+        <div className="mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
           <Link
             href="/registro"
-            className="group w-full sm:w-auto flex items-center justify-center gap-2.5 bg-white text-black hover:bg-neutral-200 font-semibold text-sm sm:text-base px-9 py-4 rounded-full transition-all duration-200 shadow-[0_1px_25px_rgba(255,255,255,0.15)] hover:scale-[1.01]"
+            className="rounded-lg bg-violet hover:bg-violet-hi text-white font-semibold px-8 py-4 transition-colors shadow-[0_8px_30px_-6px_rgba(157,62,244,0.6)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-hi"
           >
-            <span>Criar minha loja grátis</span>
-            <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+            Criar minha loja
           </Link>
           <Link
             href="/login"
-            className="w-full sm:w-auto text-neutral-400 hover:text-white px-7 py-4 rounded-full text-sm font-medium border border-white/10 hover:border-white/20 transition-all"
+            className="rounded-lg border border-ink-line hover:border-mist-dim bg-ink/60 text-mist font-medium px-8 py-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-hi"
           >
-            Acessar painel existente
+            Já tenho uma loja
           </Link>
         </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-6 font-mono text-xs text-neutral-400">
-          <span>7 DIAS DE TESTE GRÁTIS</span>
-          <span className="text-neutral-600">•</span>
-          <span>SEM CARTÃO DE CRÉDITO</span>
-          <span className="text-neutral-600">•</span>
-          <span>ZERO TAXA SOBRE VENDAS</span>
-        </div>
-
+        <p className="mt-5 text-sm text-mist-dim">7 dias grátis, sem cartão de crédito.</p>
       </div>
     </section>
   );

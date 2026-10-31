@@ -1,5 +1,6 @@
 package com.example.saasecommerce.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +13,23 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // Violação de restrição única (ex.: produto com o mesmo endereço na mesma loja).
+    // Antes caía num 500 genérico sem explicação para o lojista.
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String detail = String.valueOf(ex.getMostSpecificCause().getMessage()).toLowerCase();
+        String message = detail.contains("slug")
+                ? "Já existe um item com esse endereço (slug) na sua loja. Escolha outro."
+                : "Esse registro conflita com um dado que já existe.";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", message);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {

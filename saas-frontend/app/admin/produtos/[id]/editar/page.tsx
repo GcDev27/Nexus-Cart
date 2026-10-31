@@ -33,6 +33,8 @@ export default function EditarProdutoPage() {
   const [price, setPrice] = useState("49,90");
   const [compareAtPrice, setCompareAtPrice] = useState("69,90");
   const [deliveryType, setDeliveryType] = useState<"AUTOMATIC_LINES" | "MANUAL_CHAT">("AUTOMATIC_LINES");
+  // Tipo de entrega gravado no banco (o seletor da tela só muda o estado local até salvar)
+  const [savedDeliveryType, setSavedDeliveryType] = useState<"AUTOMATIC_LINES" | "MANUAL_CHAT">("AUTOMATIC_LINES");
   const [chatInitialMessage, setChatInitialMessage] = useState("");
 
   // Gestão de Linhas de Estoque
@@ -81,7 +83,9 @@ export default function EditarProdutoPage() {
         setDefaultVarId(v.id);
         setPrice(v.price != null ? Number(v.price).toFixed(2).replace(".", ",") : "0,00");
         setCompareAtPrice(v.compareAtPrice != null ? Number(v.compareAtPrice).toFixed(2).replace(".", ",") : "");
-        setDeliveryType(v.deliveryType === "MANUAL_CHAT" ? "MANUAL_CHAT" : "AUTOMATIC_LINES");
+        const loadedType = v.deliveryType === "MANUAL_CHAT" ? "MANUAL_CHAT" : "AUTOMATIC_LINES";
+        setDeliveryType(loadedType);
+        setSavedDeliveryType(loadedType);
         setChatInitialMessage(v.chatInitialMessage || "");
 
         // Carrega linhas de estoque da variação
@@ -107,6 +111,31 @@ export default function EditarProdutoPage() {
     }
   };
 
+  // Lê a mensagem de erro que o backend devolve ({ error: "..." })
+  const errorFrom = async (res: Response, fallback: string) => {
+    const body = await res.json().catch(() => null);
+    return body?.error || fallback;
+  };
+
+  // Grava preço, tipo de entrega e mensagem da variação principal
+  const saveVariation = async () => {
+    if (!defaultVarId) return;
+    const parsedPrice = parseFloat(price.replace(",", ".")) || 0;
+    const parsedCompare = compareAtPrice ? parseFloat(compareAtPrice.replace(",", ".")) : null;
+    const varRes = await authFetch(`/api/admin/variacoes/${defaultVarId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: "Padrão",
+        price: parsedPrice,
+        compareAtPrice: parsedCompare,
+        deliveryType,
+        chatInitialMessage: deliveryType === "MANUAL_CHAT" ? chatInitialMessage : null,
+      }),
+    });
+    if (!varRes.ok) throw new Error(await errorFrom(varRes, "Erro ao atualizar preço e entrega"));
+    setSavedDeliveryType(deliveryType);
+  };
+
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!name.trim()) {
@@ -117,9 +146,6 @@ export default function EditarProdutoPage() {
     setSaving(true);
     try {
       // 1. Atualiza Dados Básicos do Produto
-      const parsedPrice = parseFloat(price.replace(",", ".")) || 0;
-      const parsedCompare = compareAtPrice ? parseFloat(compareAtPrice.replace(",", ".")) : null;
-
       const productRes = await authFetch(`/api/admin/produtos/${produtoId}`, {
         method: "PUT",
         body: JSON.stringify({
@@ -132,22 +158,10 @@ export default function EditarProdutoPage() {
         }),
       });
 
-      if (!productRes.ok) throw new Error("Erro ao atualizar dados do produto");
+      if (!productRes.ok) throw new Error(await errorFrom(productRes, "Erro ao atualizar dados do produto"));
 
       // 2. Atualiza Variação Primária (Preço, Entrega e Mensagem)
-      if (defaultVarId) {
-        const varRes = await authFetch(`/api/admin/variacoes/${defaultVarId}`, {
-          method: "PUT",
-          body: JSON.stringify({
-            name: "Padrão",
-            price: parsedPrice,
-            compareAtPrice: parsedCompare,
-            deliveryType,
-            chatInitialMessage: deliveryType === "MANUAL_CHAT" ? chatInitialMessage : null,
-          }),
-        });
-        if (!varRes.ok) throw new Error("Erro ao atualizar preço e entrega");
-      }
+      await saveVariation();
 
       addToast("Produto atualizado com sucesso!", "success");
     } catch (error: any) {
@@ -177,12 +191,18 @@ export default function EditarProdutoPage() {
 
     setIsAddingStock(true);
     try {
+      // O lojista pode ter trocado para "entrega automática" sem salvar: o backend só aceita
+      // chaves em variações automáticas, então grava a troca antes de enviar as chaves
+      if (savedDeliveryType !== "AUTOMATIC_LINES") {
+        await saveVariation();
+      }
+
       const res = await authFetch(`/api/admin/variacoes/${defaultVarId}/estoque`, {
         method: "POST",
         body: JSON.stringify({ lines }),
       });
 
-      if (!res.ok) throw new Error("Erro ao inserir estoque");
+      if (!res.ok) throw new Error(await errorFrom(res, "Erro ao inserir estoque"));
 
       addToast(`${lines.length} ${lines.length === 1 ? "linha adicionada" : "linhas adicionadas"} com sucesso!`, "success");
       setNewStockInput("");

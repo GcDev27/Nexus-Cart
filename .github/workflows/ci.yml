@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (testes de integração e segurança)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: saas-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      # Os testes sobem um PostgreSQL próprio no Docker (Testcontainers), já disponível no runner
+      - run: chmod +x gradlew && ./gradlew test --console=plain
+      - name: Relatório dos testes
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-testes-backend
+          path: saas-backend/build/reports/tests/test
+
+  frontend:
+    name: Frontend (tipos, lint, build e dependências)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: saas-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: saas-frontend/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.example.com
+      # Falha se alguma dependência usada em produção tiver vulnerabilidade alta ou crítica
+      - run: npm audit --omit=dev --audit-level=high

@@ -190,6 +190,34 @@ Conversas de pedido são criadas automaticamente quando um pedido com **entrega 
 
 > **Importante:** guarde a `ENCRYPTION_KEY`. Se ela mudar, os Access Tokens salvos deixam de ser lidos e os lojistas precisam cadastrá-los de novo.
 
+Opcionais: `FORWARD_HEADERS_STRATEGY` (`native` atrás de proxy, `none` com o backend exposto direto), `DDL_AUTO` (padrão `validate`; o esquema vem das migrations do Flyway) e os limites `RATE_LIMIT_*` (veja `saas-backend/.env.example`).
+
+### Webhook do Mercado Pago
+
+No painel do Mercado Pago, em **Suas integrações > Webhooks**, aponte as notificações de pagamento para `https://SEU-BACKEND/api/webhooks/mercadopago` e copie a **Assinatura secreta** para o campo de mesmo nome em *Configurações > Gateways de Pagamento*. Com ela cadastrada, notificações sem assinatura válida recebem 401. Mesmo assim, o status do pagamento é sempre confirmado direto na API do Mercado Pago.
+
+## 🛡️ Segurança e testes
+
+O que está protegido:
+
+- isolamento entre lojas e entre compradores;
+- limite de requisições por IP e por e-mail;
+- reserva de chave no checkout, com expiração do Pix em 30 minutos;
+- assinatura do webhook;
+- criptografia dos tokens dos gateways;
+- validação de imagens, links e cores;
+- limite de 5 MB por requisição;
+- cabeçalhos de segurança (CSP, anti-iframe) no frontend.
+
+Tudo isso é coberto por testes de integração que rodam contra um PostgreSQL real no Docker:
+
+```bash
+cd saas-backend
+./gradlew test
+```
+
+Os testes ficam em `src/test/java/.../security/`, e o GitHub Actions (`.github/workflows/ci.yml`) roda a suíte do backend e o lint, os tipos e o build do frontend a cada push.
+
 ## 🐳 Deploy com Docker
 
 ```bash

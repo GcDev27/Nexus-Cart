@@ -98,7 +98,7 @@ export default function ImageUploader({
     try {
       const compressedBase64 = await compressImageFile(file, maxDimension);
       onChange(compressedBase64);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Erro ao processar imagem:', err);
       setError('Não foi possível carregar a imagem. Tente novamente.');
     } finally {

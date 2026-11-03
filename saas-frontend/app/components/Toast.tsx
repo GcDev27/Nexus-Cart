@@ -103,7 +103,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
     startTimer();
   }, [startTimer]);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     // Se arrastou mais de 100px pra direita ou com velocidade suficiente, dismiss
     if (info.offset.x > 100 || info.velocity.x > 500) {
       onRemove(toast.id);

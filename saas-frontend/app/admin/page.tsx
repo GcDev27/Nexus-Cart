@@ -4,6 +4,17 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { authFetch } from "../lib/auth";
 import InteractiveLineGraph from "../components/InteractiveLineGraph";
+import type { ApiOrder, ApiProduct } from "@/app/lib/apiTypes";
+
+type TopProduto = {
+  id: string | number;
+  nome?: string;
+  preco: string;
+  vendas: string;
+  crescimento: string;
+  icone: string;
+  corIcone: string;
+};
 
 interface OrderItem {
   id: string;
@@ -31,7 +42,7 @@ export default function DashboardPage() {
     ticketMedio: string;
   } | null>(null);
 
-  const [allOrders, setAllOrders] = useState<any[]>([]);
+  const [allOrders, setAllOrders] = useState<ApiOrder[]>([]);
   const [maxOrderValue, setMaxOrderValue] = useState<number>(0);
   const [orderStatusCounts, setOrderStatusCounts] = useState<{
     total: number;
@@ -98,7 +109,7 @@ export default function DashboardPage() {
     conversao: emptyKPI("0%"),
   };
 
-  const [topProdutos, setTopProdutos] = useState<any[]>([]);
+  const [topProdutos, setTopProdutos] = useState<TopProduto[]>([]);
 
   const [orders, setOrders] = useState<OrderItem[]>([]);
 
@@ -117,7 +128,7 @@ export default function DashboardPage() {
         if (productsRes.status === "fulfilled" && productsRes.value.ok) {
           const prodsData = await productsRes.value.json();
           if (Array.isArray(prodsData) && prodsData.length > 0) {
-            const mappedProds = prodsData.slice(0, 5).map((p: any, idx: number) => {
+            const mappedProds = prodsData.slice(0, 5).map((p: ApiProduct, idx: number) => {
               const primaryVar = p.variations?.[0];
               const price = primaryVar?.price ?? 0;
               return {
@@ -141,10 +152,10 @@ export default function DashboardPage() {
             setAllOrders(data);
 
             // Contagem de status reais para o Donut
-            const entregue = data.filter((o: any) => o.status === "PAID" || o.status === "DELIVERED" || o.status === "APPROVED").length;
-            const processando = data.filter((o: any) => o.status === "PENDING").length;
-            const enviado = data.filter((o: any) => o.status === "SHIPPED").length;
-            const cancelado = data.filter((o: any) => o.status === "CANCELLED" || o.status === "REFUNDED").length;
+            const entregue = data.filter((o: ApiOrder) => o.status === "PAID" || o.status === "DELIVERED" || o.status === "APPROVED").length;
+            const processando = data.filter((o: ApiOrder) => o.status === "PENDING").length;
+            const enviado = data.filter((o: ApiOrder) => o.status === "SHIPPED").length;
+            const cancelado = data.filter((o: ApiOrder) => o.status === "CANCELLED" || o.status === "REFUNDED").length;
 
             setOrderStatusCounts({
               total: data.length,
@@ -155,7 +166,7 @@ export default function DashboardPage() {
             });
 
             // Maior pedido unitário registrado
-            const maxOrder = data.reduce((max: number, o: any) => {
+            const maxOrder = data.reduce((max: number, o: ApiOrder) => {
               const val = Number(o.amount) || Number(o.totalAmount) || 0;
               return val > max ? val : max;
             }, 0);
@@ -163,12 +174,12 @@ export default function DashboardPage() {
 
             // Calcular KPIs reais
             const totalFaturamento = data
-              .filter((o: any) => o.status === "PAID" || o.status === "DELIVERED" || o.status === "APPROVED")
-              .reduce((sum: number, o: any) => sum + (Number(o.amount) || Number(o.totalAmount) || 0), 0);
+              .filter((o: ApiOrder) => o.status === "PAID" || o.status === "DELIVERED" || o.status === "APPROVED")
+              .reduce((sum: number, o: ApiOrder) => sum + (Number(o.amount) || Number(o.totalAmount) || 0), 0);
             const pedidosPagos = entregue;
 
             // Mapear últimos pedidos para a tabela
-            const mapped: OrderItem[] = data.slice(0, 5).map((o: any) => {
+            const mapped: OrderItem[] = data.slice(0, 5).map((o: ApiOrder) => {
               const customerName = o.customer?.fullName || o.customerName || "Cliente";
               const initials = customerName
                 .split(" ")
@@ -255,7 +266,7 @@ export default function DashboardPage() {
     setIsExporting(true);
     const header = ["pedido", "data", "status", "produto", "opcao", "valor", "cliente", "email"];
     const escape = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const rows = allOrders.map((o: any) => [
+    const rows = allOrders.map((o: ApiOrder) => [
       o.orderId, o.createdAt, o.status, o.productName, o.variationName, o.amount, o.customerName, o.customerEmail,
     ].map(escape).join(";"));
     // BOM no início para o Excel abrir os acentos corretamente

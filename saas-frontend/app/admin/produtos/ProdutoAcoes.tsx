@@ -51,17 +51,17 @@ export default function ProdutoAcoes({ produtoId, onDeleteSuccess }: ProdutoAcoe
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { addToast } = useToast();
-  const dialog = useDialog();
+  const { isOpen: dialogOpen, open: openDialog, close: closeDialog, dialogRef } = useDialog();
   const modalContentRef = useRef<HTMLDivElement>(null);
 
   // Fecha o modal ao clicar fora do conteúdo
   useClickOutside(modalContentRef, () => {
-    if (dialog.isOpen) dialog.close();
+    if (dialogOpen) closeDialog();
   });
 
   const openDeleteModal = () => {
     setIsMenuOpen(false);
-    dialog.open();
+    openDialog();
   };
 
   const handleDelete = async () => {
@@ -73,7 +73,7 @@ export default function ProdutoAcoes({ produtoId, onDeleteSuccess }: ProdutoAcoe
       });
       
       if (res.ok) {
-        dialog.close();
+        closeDialog();
         onDeleteSuccess(produtoId);
         addToast("Produto apagado com sucesso!", "success");
       } else {
@@ -126,13 +126,13 @@ export default function ProdutoAcoes({ produtoId, onDeleteSuccess }: ProdutoAcoe
 
       {/* MODAL DIALOG (react-modal concept - using native <dialog>) */}
       <AnimatePresence>
-        {dialog.isOpen && (
+        {dialogOpen && (
           <dialog
-            ref={dialog.dialogRef}
+            ref={dialogRef}
             className="fixed inset-0 z-50 bg-transparent backdrop:bg-transparent p-0 m-0 max-w-none max-h-none w-full h-full overflow-hidden"
             onCancel={(e) => {
               e.preventDefault();
-              dialog.close();
+              closeDialog();
             }}
           >
             <div className="fixed inset-0 flex items-center justify-center">
@@ -143,7 +143,7 @@ export default function ProdutoAcoes({ produtoId, onDeleteSuccess }: ProdutoAcoe
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                onClick={() => dialog.close()}
+                onClick={() => closeDialog()}
               />
               
               {/* Modal Content - spring animation */}
@@ -176,7 +176,7 @@ export default function ProdutoAcoes({ produtoId, onDeleteSuccess }: ProdutoAcoe
                 
                 <div className="flex justify-end gap-3">
                   <motion.button 
-                    onClick={() => dialog.close()}
+                    onClick={() => closeDialog()}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="px-4 py-2.5 rounded-xl text-sm font-medium text-neutral-300 hover:text-white bg-neutral-800/50 hover:bg-neutral-800 transition-colors border border-neutral-700/50"

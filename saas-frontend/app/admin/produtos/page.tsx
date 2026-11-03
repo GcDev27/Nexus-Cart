@@ -18,6 +18,7 @@ import { getStoredCategories } from '../../components/CategorySelect';
 import MotionCheckbox from '../../components/motion/MotionCheckbox';
 import MotionSelect from '../../components/motion/MotionSelect';
 import MotionModal from '../../components/motion/MotionModal';
+import type { ApiProduct } from '@/app/lib/apiTypes';
 
 export interface Product {
   id: number | string;
@@ -58,7 +59,7 @@ export default function ProdutosCleanPage() {
       if (!res.ok) throw new Error('Falha ao buscar produtos');
       const data = await res.json();
       if (Array.isArray(data)) {
-        const mapped: Product[] = data.map((p: any) => {
+        const mapped: Product[] = data.map((p: ApiProduct) => {
           const variations = p.variations || [];
           const primaryVar = variations[0] || {};
           return {

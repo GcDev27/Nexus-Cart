@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authFetch } from "../../../lib/auth";
 import CategorySelect from "../../../components/CategorySelect";
 import ImageUploader from "../../../components/ImageUploader";
+import { errorMessage } from '@/app/lib/apiTypes';
 
 export default function NovoProdutoPacotePage() {
   const router = useRouter();
@@ -78,8 +79,8 @@ export default function NovoProdutoPacotePage() {
       const data = await response.json();
       // Sucesso! Vai para a tela de Edição (onde configurará a variação padrão ou estoque)
       router.push(`/admin/produtos/${data.id}/editar`);
-    } catch (err: any) {
-      setError(err.message || "Erro de conexão com o servidor.");
+    } catch (err) {
+      setError(errorMessage(err) || "Erro de conexão com o servidor.");
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, ShoppingBag, ArrowRight, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
+import { errorMessage } from '@/app/lib/apiTypes';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
@@ -51,8 +52,8 @@ export default function LoginPage() {
 
       localStorage.setItem('token', data.token);
       router.push('/admin');
-    } catch (err: any) {
-      setError(err.message || 'Falha ao autenticar. Verifique seus dados.');
+    } catch (err) {
+      setError(errorMessage(err) || 'Falha ao autenticar. Verifique seus dados.');
     } finally {
       setLoading(false);
     }

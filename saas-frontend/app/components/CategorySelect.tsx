@@ -64,7 +64,7 @@ export default function CategorySelect({
         if (res.ok) {
           const prods = await res.json();
           if (Array.isArray(prods)) {
-            prods.forEach((p: any) => {
+            prods.forEach((p: { categoryName?: unknown }) => {
               if (p.categoryName && typeof p.categoryName === "string" && p.categoryName.trim()) {
                 set.add(p.categoryName.trim());
               }

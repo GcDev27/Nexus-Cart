@@ -8,6 +8,7 @@ import { authFetch, getToken } from "../../../../lib/auth";
 import CategorySelect from "../../../../components/CategorySelect";
 import ImageUploader from "../../../../components/ImageUploader";
 import VariationsSection from "./VariationsSection";
+import { errorMessage } from '@/app/lib/apiTypes';
 
 export default function EditarProdutoPage() {
   const router = useRouter();
@@ -29,26 +30,6 @@ export default function EditarProdutoPage() {
   const [visibility, setVisibility] = useState<"VISIBLE" | "HIDDEN">("VISIBLE");
   const [imageUrl, setImageUrl] = useState("");
 
-  useEffect(() => {
-    if (!produtoId) return;
-    const token = getToken();
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const payloadBase64 = token.split(".")[1];
-      const decodedJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
-      const payload = JSON.parse(decodedJson);
-      const slugVal = payload.tenantSlug || localStorage.getItem("tenant_slug");
-      if (slugVal) setTenantSlug(slugVal);
-    } catch {
-      // Usa valor default
-    }
-
-    fetchProductData();
-  }, [produtoId, router]);
 
   const fetchProductData = async () => {
     try {
@@ -69,6 +50,27 @@ export default function EditarProdutoPage() {
       router.push("/admin/produtos");
     }
   };
+
+  useEffect(() => {
+    if (!produtoId) return;
+    const token = getToken();
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const decodedJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+      const payload = JSON.parse(decodedJson);
+      const slugVal = payload.tenantSlug || localStorage.getItem("tenant_slug");
+      if (slugVal) setTenantSlug(slugVal);
+    } catch {
+      // Usa valor default
+    }
+
+    fetchProductData();
+  }, [produtoId, router]);
 
   // Lê a mensagem de erro que o backend devolve ({ error: "..." })
   const errorFrom = async (res: Response, fallback: string) => {
@@ -101,9 +103,9 @@ export default function EditarProdutoPage() {
       if (!productRes.ok) throw new Error(await errorFrom(productRes, "Erro ao atualizar dados do produto"));
 
       addToast("Produto atualizado com sucesso!", "success");
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      addToast(error.message || "Falha ao salvar alterações.", "error");
+      addToast(errorMessage(error) || "Falha ao salvar alterações.", "error");
     } finally {
       setSaving(false);
     }
@@ -122,8 +124,8 @@ export default function EditarProdutoPage() {
       } else {
         throw new Error("Erro ao excluir produto.");
       }
-    } catch (err: any) {
-      addToast(err.message || "Falha de conexão.", "error");
+    } catch (err) {
+      addToast(errorMessage(err) || "Falha de conexão.", "error");
       setDeleting(false);
     }
   };

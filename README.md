@@ -164,6 +164,41 @@ npm run dev
 | POST | `/api/checkout/orders` | Criar pedido + gerar PIX |
 | GET | `/api/checkout/orders/{id}/status` | Consultar status do pedido |
 
+### Conversas
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET/POST | `/api/storefront/customer/chats` | Conversas do comprador logado; `POST /support` abre o suporte |
+| GET/POST | `/api/storefront/customer/chats/{id}` | Ler conversa / `POST /messages` para responder |
+| GET | `/api/admin/chats` | Caixa de conversas do lojista |
+| POST | `/api/admin/chats/{id}/messages` | Responder; `/close` e `/reopen` encerram ou reabrem |
+
+Conversas de pedido são criadas automaticamente quando um pedido com **entrega manual** é aprovado.
+
+---
+
+## 🔐 Variáveis obrigatórias em produção
+
+| Variável | Para quê | Como gerar |
+|----------|----------|------------|
+| `JWT_SECRET` | Assinatura dos tokens de login | `openssl rand -base64 48` |
+| `ENCRYPTION_KEY` | Criptografia do Access Token dos gateways no banco | `openssl rand -base64 32` |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Banco PostgreSQL | |
+| `CORS_ALLOWED_ORIGINS` | Endereço público do frontend | |
+| `NEXT_PUBLIC_API_URL` | Endereço público do backend (usado no build do frontend) | |
+
+`ALLOW_SIMULATED_PAYMENTS` fica `false` em produção: sem Mercado Pago configurado a loja recusa o pedido em vez de mostrar um Pix falso. No `./gradlew bootRun` local ele vem `true`, junto com valores de desenvolvimento para `JWT_SECRET` e `ENCRYPTION_KEY`.
+
+> **Importante:** guarde a `ENCRYPTION_KEY`. Se ela mudar, os Access Tokens salvos deixam de ser lidos e os lojistas precisam cadastrá-los de novo.
+
+## 🐳 Deploy com Docker
+
+```bash
+# Na raiz, com um .env contendo as variáveis acima e POSTGRES_USER / POSTGRES_PASSWORD
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Coloque um proxy com HTTPS na frente (Caddy, Nginx ou o da hospedagem). O webhook do Mercado Pago aponta para `https://SEU-BACKEND/api/webhooks/mercadopago`.
+
 ---
 
 ## 🛠️ Stack Tecnológica

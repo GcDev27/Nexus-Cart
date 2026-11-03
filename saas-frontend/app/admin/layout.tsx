@@ -52,6 +52,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .catch(() => {});
   }, [pathname]);
 
+  // Mensagens de compradores ainda não lidas (badge em "Conversas"), atualizado a cada 20s
+  const [chatUnread, setChatUnread] = useState(0);
+  useEffect(() => {
+    if (!localStorage.getItem("token")) return;
+    const load = () =>
+      authFetch("/api/admin/chats/unread")
+        .then(res => (res.ok ? res.json() : null))
+        .then(body => body && setChatUnread(body.unread))
+        .catch(() => {});
+    load();
+    const timer = setInterval(() => document.visibilityState === "visible" && load(), 20000);
+    return () => clearInterval(timer);
+  }, [pathname]);
+
   // Enquanto verifica o login, mostra tela de carregamento elegante no tema Obsidian Orbit
   if (!isAuthorized) {
     return (
@@ -66,6 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Visão Geral", href: "/admin", icon: "dashboard" },
     { name: "Produtos", href: "/admin/produtos", icon: "inventory_2" },
     { name: "Pedidos", href: "/admin/pedidos", icon: "shopping_cart" },
+    { name: "Conversas", href: "/admin/conversas", icon: "forum", badge: chatUnread },
     { name: "Clientes", href: "/admin/clientes", icon: "group" },
     { name: "Pagamentos", href: "/admin/pagamentos", icon: "payments" },
   ];
@@ -142,7 +157,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     {item.icon}
                   </span>
                   <span className="truncate">{item.name}</span>
-                  {isActive && (
+                  {"badge" in item && item.badge ? (
+                    <span className="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-primary-container text-on-primary text-[11px] font-bold flex items-center justify-center shrink-0">
+                      {item.badge}
+                    </span>
+                  ) : isActive && (
                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(208,188,255,0.8)] shrink-0" />
                   )}
                 </Link>

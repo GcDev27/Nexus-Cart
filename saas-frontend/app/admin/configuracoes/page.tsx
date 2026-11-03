@@ -51,6 +51,10 @@ const EMPTY_FORM: FormData = {
 // ─── Tipos dos Gateways ──────────────────────────────────────────────
 type GatewayProvider = 'MERCADO_PAGO' | 'EFI_BANK' | 'ASAAS' | 'STRIPE';
 
+// Só estes gateways têm integração no checkout; os outros aparecem como "em breve"
+const AVAILABLE_GATEWAYS: GatewayProvider[] = ['MERCADO_PAGO'];
+const isAvailable = (p: GatewayProvider) => AVAILABLE_GATEWAYS.includes(p);
+
 interface GatewayConfig {
   id?: string;
   provider: GatewayProvider;
@@ -700,7 +704,8 @@ export default function SettingsPage() {
         setEditingProvider(null);
         fetchData();
       } else {
-        addToast('Não foi possível salvar as credenciais.', 'error');
+        const err = await res.json().catch(() => null);
+        addToast(err?.error || 'Não foi possível salvar as credenciais.', 'error');
       }
     } catch {
       addToast('Erro ao conectar ao servidor.', 'error');
@@ -863,13 +868,17 @@ export default function SettingsPage() {
                 const config = getGatewayConfig(prov);
                 const isSelected = selectedPixProvider === prov;
                 const isConfigured = !!config.clientSecret;
+                const available = isAvailable(prov);
 
                 return (
                   <div
                     key={prov}
-                    onClick={() => handleSetPixProvider(prov)}
-                    className={`cursor-pointer rounded-xl p-4 border transition-all duration-150 relative ${
-                      isSelected
+                    onClick={() => available && handleSetPixProvider(prov)}
+                    aria-disabled={!available}
+                    className={`rounded-xl p-4 border transition-all duration-150 relative ${
+                      !available
+                        ? 'cursor-not-allowed opacity-50 bg-[#101014] border-zinc-800/80'
+                        : isSelected
                         ? 'bg-zinc-800/70 border-zinc-600 shadow-sm'
                         : 'bg-[#101014] border-zinc-800/80 hover:border-zinc-700 hover:bg-[#16161b]'
                     }`}
@@ -892,9 +901,10 @@ export default function SettingsPage() {
 
                     <div className="flex items-center justify-between text-[11px]">
                       <span className={`px-2 py-0.5 rounded ${
-                        isConfigured ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border border-zinc-700/40'
+                        !available ? 'bg-zinc-800 text-zinc-400 border border-zinc-700/40'
+                          : isConfigured ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-zinc-800 text-zinc-500 border border-zinc-700/40'
                       }`}>
-                        {isConfigured ? 'Credenciais Salvas' : 'Não Configurado'}
+                        {!available ? 'Em breve' : isConfigured ? 'Credenciais salvas' : 'Não configurado'}
                       </span>
                     </div>
                   </div>
@@ -915,6 +925,7 @@ export default function SettingsPage() {
                 const info = GATEWAY_DETAILS[prov];
                 const config = getGatewayConfig(prov);
                 const isConfigured = !!config.clientSecret;
+                const available = isAvailable(prov);
 
                 return (
                   <div
@@ -934,7 +945,11 @@ export default function SettingsPage() {
                           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700/50">
                             {info.badge}
                           </span>
-                          {config.enabled ? (
+                          {!available ? (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              Em breve
+                            </span>
+                          ) : config.enabled ? (
                             <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                               <span className="w-1 h-1 rounded-full bg-emerald-400" />
                               Ativo
@@ -979,7 +994,9 @@ export default function SettingsPage() {
                       {/* Botão Configurar */}
                       <button
                         onClick={() => handleOpenGatewayEdit(prov)}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-all active:scale-95 shadow-sm"
+                        disabled={!available}
+                        title={!available ? 'Integração ainda não disponível' : undefined}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-all active:scale-95 shadow-sm"
                       >
                         <Sliders className="w-3.5 h-3.5" />
                         Configurar
@@ -988,8 +1005,8 @@ export default function SettingsPage() {
                       {/* Toggle Liga/Desliga */}
                       <button
                         onClick={() => handleToggleGateway(prov, config.enabled)}
-                        disabled={!isConfigured}
-                        title={!isConfigured ? 'Configure as credenciais primeiro' : 'Ativar/Desativar'}
+                        disabled={!available || !isConfigured}
+                        title={!available ? 'Integração ainda não disponível' : !isConfigured ? 'Configure as credenciais primeiro' : 'Ativar/Desativar'}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed ${
                           config.enabled ? 'bg-emerald-500' : 'bg-zinc-700'
                         }`}

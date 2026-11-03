@@ -47,8 +47,18 @@ public class PaymentGatewayConfigService {
         return dtos;
     }
 
+    // Gateways com integração de verdade no checkout. Os outros aparecem no painel como "em breve".
+    private static final java.util.Set<PaymentProvider> INTEGRATED = java.util.EnumSet.of(PaymentProvider.MERCADO_PAGO);
+
+    private static void requireIntegrated(PaymentProvider provider) {
+        if (!INTEGRATED.contains(provider)) {
+            throw new IllegalArgumentException("Esse gateway ainda não está disponível. Por enquanto use o Mercado Pago.");
+        }
+    }
+
     @Transactional
     public PaymentGatewayDTO saveOrUpdateConfig(UUID tenantId, PaymentProvider provider, SavePaymentGatewayRequest request) {
+        if (request.isEnabled()) requireIntegrated(provider);
         PaymentGatewayConfig config = repository.findByTenantIdAndProvider(tenantId, provider)
                 .orElseGet(() -> PaymentGatewayConfig.builder()
                         .tenantId(tenantId)
@@ -76,6 +86,7 @@ public class PaymentGatewayConfigService {
 
     @Transactional
     public PaymentGatewayDTO setPixProvider(UUID tenantId, PaymentProvider provider) {
+        requireIntegrated(provider);
         List<PaymentGatewayConfig> configs = repository.findByTenantId(tenantId);
         for (PaymentGatewayConfig c : configs) {
             if (c.getProvider() == provider) {

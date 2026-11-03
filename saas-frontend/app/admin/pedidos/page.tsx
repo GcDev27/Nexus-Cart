@@ -67,9 +67,11 @@ export default function AdminPedidosPage() {
         if (selectedOrder && selectedOrder.orderId === orderId) {
           setSelectedOrder((prev) => (prev ? { ...prev, ...updated } : null));
         }
-        addToast("Pedido aprovado! Chave de estoque liberada com sucesso.", "success");
+        addToast("Pedido aprovado e entregue ao comprador.", "success");
       } else {
-        addToast("Erro ao aprovar o pedido.", "error");
+        // Em produção a aprovação de teste é desativada no backend, que explica o motivo
+        const err = await res.json().catch(() => null);
+        addToast(err?.error || "Erro ao aprovar o pedido.", "error");
       }
     } catch {
       addToast("Erro de conexão com o servidor.", "error");

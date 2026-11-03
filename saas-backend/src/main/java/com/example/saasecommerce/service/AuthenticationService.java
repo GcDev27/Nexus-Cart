@@ -10,6 +10,7 @@ import com.example.saasecommerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,15 +26,32 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final RateLimiter rateLimiter;
+
+    // Limite de senhas erradas por e-mail: 8 tentativas a cada 10 minutos
+    private static final int MAX_LOGIN_FAILURES = 8;
+    private static final long LOGIN_WINDOW_MS = 10 * 60_000;
 
     @Transactional // Impede que o utilizador seja criado se a loja falhar (e vice-versa)
     public AuthenticationResponse register(RegisterRequest request) {
 
+        String email = request.getEmail().trim().toLowerCase();
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new IllegalArgumentException("Já existe uma conta com este e-mail. Faça login ou use outro e-mail.");
+        }
+
         // 1. Gera um slug automático (URL amigável) para a loja
-        String storeSlug = Normalizer.normalize(request.getStoreName().toLowerCase(), Normalizer.Form.NFD)
+        String baseSlug = Normalizer.normalize(request.getStoreName().toLowerCase(), Normalizer.Form.NFD)
                 .replaceAll("[\\p{InCombiningDiacriticalMarks}]", "")
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("(^-|-$)+", "");
+        if (baseSlug.isBlank()) baseSlug = "loja";
+
+        // Nome de loja repetido não pode derrubar o cadastro: usa loja-2, loja-3...
+        String storeSlug = baseSlug;
+        for (int i = 2; tenantRepository.findBySlug(storeSlug).isPresent(); i++) {
+            storeSlug = baseSlug + "-" + i;
+        }
 
         // 2. Instancia e salva a Loja (Tenant)
         Tenant tenant = new Tenant();
@@ -44,7 +62,7 @@ public class AuthenticationService {
         // 3. Instancia e salva o Utilizador Lojista, atrelando o ID da nova loja a ele
         User user = new User();
         user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setTenantId(savedTenant.getId());
 
@@ -67,13 +85,21 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        // Valida as credenciais no Spring Security
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        String email = request.getEmail().trim().toLowerCase();
+        String limitKey = "login:merchant:" + email;
+        rateLimiter.check(limitKey, MAX_LOGIN_FAILURES, LOGIN_WINDOW_MS,
+                "Muitas tentativas de login. Aguarde alguns minutos e tente de novo.");
 
-        // Se passar da autenticação acima, sabemos que o utilizador existe e a senha está correta
-        var user = userRepository.findByEmail(request.getEmail())
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, request.getPassword()));
+        } catch (AuthenticationException e) {
+            rateLimiter.record(limitKey);
+            // Mesma mensagem para e-mail inexistente e senha errada
+            throw new IllegalArgumentException("E-mail ou senha inválidos.");
+        }
+        rateLimiter.reset(limitKey);
+
+        var user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado"));
                 
         var tenant = tenantRepository.findById(user.getTenantId())

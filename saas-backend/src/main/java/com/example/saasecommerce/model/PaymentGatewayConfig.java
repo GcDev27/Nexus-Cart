@@ -41,7 +41,9 @@ public class PaymentGatewayConfig {
     @Column(name = "client_id")
     private String clientId;
 
+    // Access Token / chave secreta do gateway: criptografado no banco
     @Column(name = "client_secret", columnDefinition = "TEXT")
+    @Convert(converter = com.example.saasecommerce.security.EncryptedStringConverter.class)
     private String clientSecret;
 
     @Column(name = "public_key", columnDefinition = "TEXT")

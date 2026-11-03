@@ -54,6 +54,7 @@ public class Product {
 
     // Variações deste produto (preço, entrega, estoque ficam aqui)
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("createdAt ASC")
     @Builder.Default
     private List<Variation> variations = new ArrayList<>();
 

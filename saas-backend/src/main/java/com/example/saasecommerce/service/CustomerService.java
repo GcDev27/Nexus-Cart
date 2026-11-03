@@ -30,6 +30,7 @@ public class CustomerService {
     private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RateLimiter rateLimiter;
 
     @Transactional
     public CustomerAuthResponse register(String tenantSlug, CustomerRegisterRequest request) {
@@ -72,12 +73,16 @@ public class CustomerService {
 
         String email = request.getEmail().trim().toLowerCase();
 
-        Customer customer = customerRepository.findByTenantIdAndEmail(tenant.getId(), email)
-                .orElseThrow(() -> new IllegalArgumentException("E-mail ou senha inválidos."));
+        String limitKey = "login:customer:" + tenant.getId() + ":" + email;
+        rateLimiter.check(limitKey, 8, 10 * 60_000,
+                "Muitas tentativas de login. Aguarde alguns minutos e tente de novo.");
 
-        if (!passwordEncoder.matches(request.getPassword(), customer.getPassword())) {
+        Customer customer = customerRepository.findByTenantIdAndEmail(tenant.getId(), email).orElse(null);
+        if (customer == null || !passwordEncoder.matches(request.getPassword(), customer.getPassword())) {
+            rateLimiter.record(limitKey);
             throw new IllegalArgumentException("E-mail ou senha inválidos.");
         }
+        rateLimiter.reset(limitKey);
 
         String token = jwtService.generateCustomerToken(customer);
         CustomerDTO dto = toDTO(customer);

@@ -21,7 +21,7 @@ public class ProductService {
         
         if (product.getVariations() == null || product.getVariations().isEmpty()) {
             com.example.saasecommerce.model.Variation defaultVariation = com.example.saasecommerce.model.Variation.builder()
-                    .name("Opção Padrão")
+                    .name("Padrão")
                     .price(java.math.BigDecimal.ZERO)
                     .deliveryType(com.example.saasecommerce.model.DeliveryType.AUTOMATIC_LINES)
                     .hasUnlimitedStock(false)

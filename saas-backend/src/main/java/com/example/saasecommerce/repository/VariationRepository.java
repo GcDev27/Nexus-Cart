@@ -12,7 +12,8 @@ import java.util.UUID;
 public interface VariationRepository extends JpaRepository<Variation, UUID> {
 
     // Lista todas as variações de um produto específico
-    List<Variation> findAllByProductId(UUID productId);
+    // Ordem de criação: a primeira opção cadastrada aparece primeiro no painel e na vitrine
+    List<Variation> findAllByProductIdOrderByCreatedAtAsc(UUID productId);
 
     // Busca uma variação pelo ID, garantindo que pertence ao produto certo
     Optional<Variation> findByIdAndProductId(UUID id, UUID productId);

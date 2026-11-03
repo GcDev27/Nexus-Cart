@@ -89,90 +89,18 @@ export default function DashboardPage() {
     return result.length >= 2 ? result : undefined;
   }, [allOrders, activeMetric, selectedPeriod]);
 
-  // KPIs de referência caso a loja ainda não tenha pedidos
+  // Loja sem pedidos ainda: mostra zeros (antes exibia números fictícios, como "R$ 248.750")
+  const emptyKPI = (valor: string) => ({ valor, variacao: "", label: "sem vendas ainda" });
   const defaultKPIs = {
-    faturamento: {
-      "7D": { valor: "R$ 64.210", variacao: "+9.2%", label: "vs. semana anterior" },
-      "30D": { valor: "R$ 248.750", variacao: "+18.6%", label: "vs. mês anterior" },
-      "90D": { valor: "R$ 720.400", variacao: "+24.1%", label: "vs. trimestre ant." },
-      "1A": { valor: "R$ 2.450.000", variacao: "+42.8%", label: "vs. ano anterior" },
-    },
-    pedidos: {
-      "7D": { valor: "342", variacao: "+6.8%", label: "vs. semana anterior" },
-      "30D": { valor: "1.287", variacao: "+14.2%", label: "vs. mês anterior" },
-      "90D": { valor: "3.910", variacao: "+18.5%", label: "vs. trimestre ant." },
-      "1A": { valor: "14.280", variacao: "+35.0%", label: "vs. ano anterior" },
-    },
-    clientes: {
-      "7D": { valor: "980", variacao: "+5.4%", label: "vs. semana anterior" },
-      "30D": { valor: "3.642", variacao: "+12.5%", label: "vs. mês anterior" },
-      "90D": { valor: "8.430", variacao: "+21.0%", label: "vs. trimestre ant." },
-      "1A": { valor: "28.910", variacao: "+48.2%", label: "vs. ano anterior" },
-    },
-    conversao: {
-      "7D": { valor: "2.61%", variacao: "+4.1%", label: "vs. média do setor" },
-      "30D": { valor: "2.73%", variacao: "+8.4%", label: "vs. média do setor" },
-      "90D": { valor: "2.85%", variacao: "+10.2%", label: "vs. média do setor" },
-      "1A": { valor: "2.94%", variacao: "+12.0%", label: "vs. média do setor" },
-    },
+    faturamento: emptyKPI("R$ 0,00"),
+    pedidos: emptyKPI("0"),
+    clientes: emptyKPI("0"),
+    conversao: emptyKPI("0%"),
   };
 
   const [topProdutos, setTopProdutos] = useState<any[]>([]);
 
-  const initialOrders: OrderItem[] = [
-    {
-      id: "#PED-10487",
-      cliente: "Sophia Bennett",
-      email: "sophia.b@mail.com",
-      data: "3 Jun, 2024",
-      valor: "R$ 129,00",
-      status: "Entregue",
-      metodo: "Pix Instantâneo",
-      iniciais: "SB",
-    },
-    {
-      id: "#PED-10486",
-      cliente: "James Anderson",
-      email: "j.anderson@cloud.net",
-      data: "3 Jun, 2024",
-      valor: "R$ 199,00",
-      status: "Enviado",
-      metodo: "Cartão de Crédito",
-      iniciais: "JA",
-    },
-    {
-      id: "#PED-10485",
-      cliente: "Olivia Martinez",
-      email: "olivia.m@tech.io",
-      data: "2 Jun, 2024",
-      valor: "R$ 89,00",
-      status: "Processando",
-      metodo: "Boleto Bancário",
-      iniciais: "OM",
-    },
-    {
-      id: "#PED-10484",
-      cliente: "Daniel Thompson",
-      email: "dan.t@work.br",
-      data: "2 Jun, 2024",
-      valor: "R$ 249,00",
-      status: "Entregue",
-      metodo: "Pix Instantâneo",
-      iniciais: "DT",
-    },
-    {
-      id: "#PED-10483",
-      cliente: "Isabella Wilson",
-      email: "isabella.w@domain.com",
-      data: "1 Jun, 2024",
-      valor: "R$ 159,00",
-      status: "Cancelado",
-      metodo: "Cartão de Crédito",
-      iniciais: "IW",
-    },
-  ];
-
-  const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
+  const [orders, setOrders] = useState<OrderItem[]>([]);
 
   // Sincronização graciosa com backend — carrega pedidos E KPIs reais
   useEffect(() => {
@@ -318,24 +246,39 @@ export default function DashboardPage() {
     loadRealData();
   }, []);
 
+  // Baixa um CSV com os pedidos da loja (antes só mostrava um aviso de "exportado")
   const handleExport = () => {
+    if (allOrders.length === 0) {
+      alert("Ainda não há pedidos para exportar.");
+      return;
+    }
     setIsExporting(true);
-    setTimeout(() => {
-      setIsExporting(false);
-      alert("Relatório operacional consolidado exportado com sucesso (CSV).");
-    }, 1200);
+    const header = ["pedido", "data", "status", "produto", "opcao", "valor", "cliente", "email"];
+    const escape = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const rows = allOrders.map((o: any) => [
+      o.orderId, o.createdAt, o.status, o.productName, o.variationName, o.amount, o.customerName, o.customerEmail,
+    ].map(escape).join(";"));
+    // BOM no início para o Excel abrir os acentos corretamente
+    const blob = new Blob(["﻿" + [header.join(";"), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsExporting(false);
   };
 
   const currentKPIs = {
     faturamento: realKPIs
       ? { valor: realKPIs.faturamento, variacao: "+0%", label: "dados reais" }
-      : defaultKPIs.faturamento[selectedPeriod],
+      : defaultKPIs.faturamento,
     pedidos: realKPIs
       ? { valor: realKPIs.totalPedidos, variacao: "+0%", label: "dados reais" }
-      : defaultKPIs.pedidos[selectedPeriod],
+      : defaultKPIs.pedidos,
     clientes: realKPIs
       ? { valor: realKPIs.totalClientes, variacao: "+0%", label: "dados reais" }
-      : defaultKPIs.clientes[selectedPeriod],
+      : defaultKPIs.clientes,
     conversao: realKPIs
       ? {
           valor: realKPIs.totalPedidosNum > 0
@@ -344,7 +287,7 @@ export default function DashboardPage() {
           variacao: "+0%",
           label: "taxa de aprovação"
         }
-      : defaultKPIs.conversao[selectedPeriod],
+      : defaultKPIs.conversao,
   };
 
   const getStatusBadge = (status: OrderItem["status"]) => {
@@ -407,7 +350,7 @@ export default function DashboardPage() {
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
               </span>
               <span className="text-[10px] sm:text-xs text-secondary font-medium tracking-wide">
-                Loja Operacional • 99.98%
+                Loja no ar
               </span>
             </div>
           </div>

@@ -52,7 +52,7 @@ public class VariationService {
         productRepository.findByIdAndTenantId(productId, tenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado ou não pertence a esta loja"));
 
-        return variationRepository.findAllByProductId(productId)
+        return variationRepository.findAllByProductIdOrderByCreatedAtAsc(productId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -153,7 +153,7 @@ public class VariationService {
      * calculando o estoque disponível a partir das StockLines.
      */
     private VariationResponse toResponse(Variation variation) {
-        long availableStock = stockLineRepository.countByVariationIdAndIsDeliveredFalse(variation.getId());
+        long availableStock = stockLineRepository.countAvailable(variation.getId(), java.time.LocalDateTime.now());
 
         return VariationResponse.builder()
                 .id(variation.getId())

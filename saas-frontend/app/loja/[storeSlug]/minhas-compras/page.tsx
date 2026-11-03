@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { getStoreCustomerToken, getStoreCustomerData, removeCustomerSession, customerFetch, CustomerData } from '../../../lib/customerAuth';
-import { ShoppingBag, CheckCircle2, Clock, XCircle, Copy, Check, LogOut, Key, RefreshCw } from 'lucide-react';
+import { ShoppingBag, CheckCircle2, Clock, XCircle, Copy, Check, LogOut, Key, RefreshCw, MessageCircle } from 'lucide-react';
+import type { ChatThreadSummary } from '../../../lib/chat';
 import { useStore, formatPrice } from '../../../components/store/StoreContext';
 import { AnnouncementBar, StoreFooter, StoreHeader } from '../../../components/store/StoreChrome';
 
@@ -27,6 +28,8 @@ export default function MinhasComprasPage() {
 
   const [customer, setCustomer] = useState<CustomerData | null>(null);
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  // Conversa de cada pedido com entrega manual (orderId -> conversa)
+  const [threadsByOrder, setThreadsByOrder] = useState<Record<string, ChatThreadSummary>>({});
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'PAID' | 'PENDING'>('ALL');
@@ -47,6 +50,11 @@ export default function MinhasComprasPage() {
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
+        const chatRes = await customerFetch('/api/storefront/customer/chats', {}, storeSlug);
+        if (chatRes.ok) {
+          const threads: ChatThreadSummary[] = await chatRes.json();
+          setThreadsByOrder(Object.fromEntries(threads.filter((t) => t.orderId).map((t) => [t.orderId as string, t])));
+        }
       } else if (res.status === 401) {
         removeCustomerSession();
         router.push(`/loja/${storeSlug}/login`);
@@ -223,7 +231,27 @@ export default function MinhasComprasPage() {
                         </div>
                       </div>
 
-                      {isPaid && order.deliveredContent && (
+                      {isPaid && threadsByOrder[order.orderId] && (
+                        <div className="mt-5 pt-5 border-t border-[var(--border-color)]">
+                          <p className="text-sm font-medium mb-1">Entrega combinada pelo chat</p>
+                          <p className="text-sm text-[var(--text-secondary)] whitespace-pre-wrap">{order.deliveredContent}</p>
+                          <Link
+                            href={`/loja/${storeSlug}/conversas?thread=${threadsByOrder[order.orderId].id}`}
+                            className="mt-4 inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold"
+                            style={{ ...radiusSm, background: 'var(--color-brand)', color: 'var(--store-on-brand)' }}
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            Abrir conversa
+                            {threadsByOrder[order.orderId].unread > 0 && (
+                              <span className="ml-1 min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center bg-white/25">
+                                {threadsByOrder[order.orderId].unread}
+                              </span>
+                            )}
+                          </Link>
+                        </div>
+                      )}
+
+                      {isPaid && order.deliveredContent && !threadsByOrder[order.orderId] && (
                         <div className="mt-5 pt-5 border-t border-[var(--border-color)]">
                           <p className="flex items-center gap-2 text-sm font-medium mb-2">
                             <Key className="w-4 h-4 text-[var(--color-brand)]" aria-hidden />

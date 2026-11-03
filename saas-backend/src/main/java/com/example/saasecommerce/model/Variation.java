@@ -67,6 +67,8 @@ public class Variation {
     @JsonProperty(value = "availableStockCount", access = JsonProperty.Access.READ_ONLY)
     public long getAvailableStockCount() {
         if (stockLines == null) return 0;
-        return stockLines.stream().filter(line -> !line.isDelivered()).count();
+        // Chaves reservadas para um Pix em aberto não contam como disponíveis
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        return stockLines.stream().filter(line -> line.isAvailableAt(now)).count();
     }
 }

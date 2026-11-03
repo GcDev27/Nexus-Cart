@@ -38,6 +38,11 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         // Liberta o preflight do CORS para não dar erro 403
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Painel do lojista: só token de lojista. Token de comprador recebe 403.
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_USER")
+                        // Área do comprador logado (vem antes do permitAll da vitrine)
+                        .requestMatchers("/api/storefront/customer/me", "/api/storefront/customer/orders",
+                                "/api/storefront/customer/chats/**").hasAuthority("ROLE_CUSTOMER")
                         .requestMatchers("/api/auth/**", "/api/storefront/**", "/api/webhooks/**", "/error").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/checkout/orders").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/checkout/orders/*/status").permitAll()

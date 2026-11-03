@@ -216,12 +216,20 @@ export function StoreFooter() {
               ))}
             </ul>
           )}
-          <Link
-            href={`/loja/${store.slug}/minhas-compras`}
-            className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            Minhas compras
-          </Link>
+          <div className="flex gap-5">
+            <Link
+              href={`/loja/${store.slug}/conversas?novo=suporte`}
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              Falar com a loja
+            </Link>
+            <Link
+              href={`/loja/${store.slug}/minhas-compras`}
+              className="text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              Minhas compras
+            </Link>
+          </div>
         </div>
       </div>
       <p className="pb-8 text-center text-xs text-[var(--text-muted)]">

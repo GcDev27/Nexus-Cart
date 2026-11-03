@@ -37,6 +37,18 @@ public class StockLine {
     @Column(name = "delivered_at")
     private LocalDateTime deliveredAt;
 
+    // Reserva temporária: a chave fica separada para um pedido enquanto o Pix dele está aberto
+    @Column(name = "reserved_order_id")
+    private UUID reservedOrderId;
+
+    @Column(name = "reserved_until")
+    private LocalDateTime reservedUntil;
+
+    /** Livre para venda: não entregue e sem reserva válida. */
+    public boolean isAvailableAt(LocalDateTime now) {
+        return !isDelivered && (reservedUntil == null || reservedUntil.isBefore(now));
+    }
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

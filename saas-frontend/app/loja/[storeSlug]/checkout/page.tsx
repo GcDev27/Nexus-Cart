@@ -323,7 +323,11 @@ function CheckoutContent() {
             <span className="font-semibold tabular-nums">{formatPrice(Number(order?.amount || variation?.price || 0))}</span>
           </div>
 
-          <PrimaryLink href={`/loja/${storeSlug}`}>Voltar para a loja</PrimaryLink>
+          {isChat && getCustomerToken() ? (
+            <PrimaryLink href={`/loja/${storeSlug}/conversas`}>Abrir conversa do pedido</PrimaryLink>
+          ) : (
+            <PrimaryLink href={`/loja/${storeSlug}`}>Voltar para a loja</PrimaryLink>
+          )}
         </div>
       </CheckoutShell>
     );
@@ -433,6 +437,10 @@ function CheckoutContent() {
   }
 
   // ━━━ TELA: FORMULÁRIO ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // Entrega manual acontece pelo chat do pedido, que exige conta
+  const needsLogin = isChat && !getCustomerToken();
+  const loginHref = `/loja/${storeSlug}/login?redirect=${encodeURIComponent(`/loja/${storeSlug}/checkout?variationId=${variation.id}`)}`;
+
   const inputClass = (hasError?: boolean) =>
     `w-full bg-[var(--bg-primary)] border px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition-colors placeholder:text-[var(--text-muted)] ${
       hasError ? 'border-red-500/60' : 'border-[var(--border-color)] focus:border-[var(--color-brand)]'
@@ -498,9 +506,23 @@ function CheckoutContent() {
               </Card>
             </fieldset>
 
-            {!getCustomerToken() && (
+            {needsLogin ? (
+              <div className="p-4 border border-[var(--color-brand)] text-sm" style={{ borderRadius: 'var(--store-radius-sm)', background: 'color-mix(in srgb, var(--color-brand) 8%, transparent)' }}>
+                <p className="font-semibold">Entre na sua conta para comprar</p>
+                <p className="mt-1 text-[var(--text-secondary)]">
+                  A entrega deste produto é combinada com a loja pelo chat do pedido, que fica na sua conta.
+                </p>
+                <Link
+                  href={loginHref}
+                  className="inline-block mt-3 px-4 py-2 font-semibold"
+                  style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)', borderRadius: 'var(--store-radius-sm)' }}
+                >
+                  Entrar ou criar conta
+                </Link>
+              </div>
+            ) : !getCustomerToken() && (
               <p className="text-sm text-[var(--text-secondary)]">
-                <Link href={`/loja/${storeSlug}/login?redirect=${encodeURIComponent(`/loja/${storeSlug}/checkout?variationId=${variation.id}`)}`} className="font-semibold text-[var(--color-brand)] hover:underline">Entre na sua conta</Link>{' '}
+                <Link href={loginHref} className="font-semibold text-[var(--color-brand)] hover:underline">Entre na sua conta</Link>{' '}
                 antes de pagar para a chave ficar salva em &quot;Minhas compras&quot;.
               </p>
             )}
@@ -509,7 +531,7 @@ function CheckoutContent() {
 
             <button
               type="submit"
-              disabled={step === 'processing' || isOutOfStock}
+              disabled={step === 'processing' || isOutOfStock || needsLogin}
               className="w-full py-4 text-base font-bold transition-all hover:brightness-110 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ background: 'var(--color-brand)', color: 'var(--store-on-brand)', borderRadius: 'var(--store-radius-sm)' }}
             >

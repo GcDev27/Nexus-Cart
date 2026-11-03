@@ -42,6 +42,12 @@ public interface StockLineRepository extends JpaRepository<StockLine, UUID> {
                                            @Param("now") LocalDateTime now,
                                            Pageable pageable);
 
+    // Libera reservas de um pedido que expirou ou foi cancelado
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update StockLine s set s.reservedOrderId = null, s.reservedUntil = null " +
+           "where s.reservedOrderId = :orderId and s.isDelivered = false")
+    int releaseReservation(@Param("orderId") UUID orderId);
+
     // Linha reservada para um pedido específico
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<StockLine> findFirstByReservedOrderIdAndIsDeliveredFalse(UUID orderId);

@@ -1,6 +1,8 @@
 package com.example.saasecommerce.exception;
 
+import com.example.saasecommerce.security.RequestSizeFilter;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +15,21 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    // JSON malformado ou corpo acima do limite (o RequestSizeFilter interrompe a leitura)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException ex) {
+        boolean tooLarge = false;
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof RequestSizeFilter.PayloadTooLargeException) tooLarge = true;
+        }
+        HttpStatus status = tooLarge ? HttpStatus.PAYLOAD_TOO_LARGE : HttpStatus.BAD_REQUEST;
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status.value());
+        body.put("error", tooLarge ? "Envio grande demais. Use uma imagem menor." : "Dados enviados em formato inválido.");
+        return ResponseEntity.status(status).body(body);
+    }
 
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<Map<String, Object>> handleTooManyRequests(TooManyRequestsException ex) {

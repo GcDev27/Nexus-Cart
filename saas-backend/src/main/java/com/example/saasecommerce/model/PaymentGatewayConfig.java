@@ -46,6 +46,11 @@ public class PaymentGatewayConfig {
     @Convert(converter = com.example.saasecommerce.security.EncryptedStringConverter.class)
     private String clientSecret;
 
+    // Assinatura secreta dos webhooks (painel do Mercado Pago > Webhooks). Opcional; criptografada
+    @Column(name = "webhook_secret", columnDefinition = "TEXT")
+    @Convert(converter = com.example.saasecommerce.security.EncryptedStringConverter.class)
+    private String webhookSecret;
+
     @Column(name = "public_key", columnDefinition = "TEXT")
     private String publicKey;
 

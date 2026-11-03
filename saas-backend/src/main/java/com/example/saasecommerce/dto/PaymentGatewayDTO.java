@@ -21,6 +21,8 @@ public class PaymentGatewayDTO {
     private String clientId;
     private String clientSecret; // Retornado mascarado para segurança
     private String publicKey;
+    // Só informa se existe; o valor nunca volta para o navegador
+    private boolean hasWebhookSecret;
     private BigDecimal feePercentage;
     private BigDecimal feeFixed;
 }

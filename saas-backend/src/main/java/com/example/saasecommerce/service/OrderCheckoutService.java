@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +23,12 @@ import java.util.UUID;
 @Slf4j
 public class OrderCheckoutService {
 
-    // Tempo que a chave fica separada para o pedido (o mesmo cronômetro do Pix na tela)
-    private static final int RESERVATION_MINUTES = 15;
+    // O Pix vence em 30 min (Mercado Pago e cronômetro da tela); a chave fica reservada pelo mesmo tempo
+    private static final int PIX_MINUTES = 30;
+    // Depois disso (com folga para um pagamento de última hora) o pedido expira e libera a chave
+    private static final int EXPIRE_AFTER_MINUTES = 35;
+    // Pix em aberto por e-mail na mesma loja
+    private static final int MAX_PENDING_PER_EMAIL = 3;
 
     private final OrderRepository orderRepository;
     private final TenantRepository tenantRepository;
@@ -63,6 +68,14 @@ public class OrderCheckoutService {
         UUID customerId = null;
         if (currentCustomer != null && currentCustomer.getTenantId().equals(tenant.getId())) {
             customerId = currentCustomer.getId();
+        }
+
+        // Um comprador não pode acumular Pix em aberto para segurar o estoque de outros
+        long pendingForEmail = orderRepository.countByTenantIdAndCustomerEmailIgnoreCaseAndStatusAndCreatedAtAfter(
+                tenant.getId(), request.getCustomerEmail().trim(), OrderStatus.PENDING,
+                LocalDateTime.now().minusMinutes(EXPIRE_AFTER_MINUTES));
+        if (pendingForEmail >= MAX_PENDING_PER_EMAIL) {
+            throw new IllegalStateException("Você já tem pedidos aguardando pagamento. Pague um deles ou espere o Pix vencer (30 minutos).");
         }
 
         // Entrega manual acontece pelo chat do pedido, que exige uma conta na loja
@@ -106,7 +119,8 @@ public class OrderCheckoutService {
                         product.getName() + " - " + variation.getName(),
                         request.getCustomerEmail(),
                         request.getCustomerName(),
-                        request.getCustomerCpf()
+                        request.getCustomerCpf(),
+                        PIX_MINUTES
                 );
                 provider = PaymentProvider.MERCADO_PAGO;
                 qrCode = mpResult.getQrCode();
@@ -158,7 +172,7 @@ public class OrderCheckoutService {
 
         if (reservedLine != null) {
             reservedLine.setReservedOrderId(saved.getId());
-            reservedLine.setReservedUntil(LocalDateTime.now().plusMinutes(RESERVATION_MINUTES));
+            reservedLine.setReservedUntil(LocalDateTime.now().plusMinutes(PIX_MINUTES));
             stockLineRepository.save(reservedLine);
         }
 
@@ -249,8 +263,15 @@ public class OrderCheckoutService {
         return toOrderResponse(orderRepository.findById(orderId).orElseThrow());
     }
 
+    /** Assinatura do webhook inválida para a loja do pedido. Vira HTTP 401. */
+    public static class InvalidWebhookSignatureException extends RuntimeException {
+        public InvalidWebhookSignatureException() {
+            super("Assinatura do webhook inválida");
+        }
+    }
+
     @Transactional
-    public boolean processPaymentWebhook(String externalPaymentId) {
+    public boolean processPaymentWebhook(String externalPaymentId, String signature, String requestId) {
         if (externalPaymentId == null || externalPaymentId.isBlank()) {
             return false;
         }
@@ -262,6 +283,18 @@ public class OrderCheckoutService {
         }
 
         Order order = orderOpt.get();
+
+        // Se a loja cadastrou a assinatura secreta do webhook, só aceita notificações assinadas por ela
+        String secret = gatewayConfigRepository
+                .findByTenantIdAndProvider(order.getTenantId(), PaymentProvider.MERCADO_PAGO)
+                .map(PaymentGatewayConfig::getWebhookSecret)
+                .orElse(null);
+        if (secret != null && !secret.isBlank()
+                && !MercadoPagoWebhookVerifier.isValid(secret, signature, requestId, externalPaymentId, java.time.Clock.systemUTC())) {
+            log.warn("Webhook com assinatura inválida para o pedido {}", order.getId());
+            throw new InvalidWebhookSignatureException();
+        }
+
         if (order.getStatus() == OrderStatus.PAID) {
             return true;
         }
@@ -273,6 +306,29 @@ public class OrderCheckoutService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Expira pedidos com Pix vencido e devolve a chave reservada ao estoque. Antes, confere no
+     * Mercado Pago se o pagamento não caiu no último instante (aí aprova em vez de expirar).
+     */
+    @Scheduled(fixedDelay = 60_000, initialDelay = 30_000)
+    @Transactional
+    public void expireStalePendingOrders() {
+        List<Order> stale = orderRepository.findTop100ByStatusAndCreatedAtBefore(
+                OrderStatus.PENDING, LocalDateTime.now().minusMinutes(EXPIRE_AFTER_MINUTES));
+        for (Order order : stale) {
+            if (isApprovedOnMercadoPago(order)) {
+                approveOrder(order.getId());
+                continue;
+            }
+            Order locked = orderRepository.findByIdForUpdate(order.getId()).orElse(null);
+            if (locked == null || locked.getStatus() != OrderStatus.PENDING) continue;
+            locked.setStatus(OrderStatus.EXPIRED);
+            orderRepository.save(locked);
+            stockLineRepository.releaseReservation(locked.getId());
+        }
+        if (!stale.isEmpty()) log.info("{} pedido(s) pendente(s) verificados para expiração", stale.size());
     }
 
     private boolean isApprovedOnMercadoPago(Order order) {

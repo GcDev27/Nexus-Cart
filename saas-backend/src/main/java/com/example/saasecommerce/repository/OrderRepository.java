@@ -24,5 +24,12 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     List<Order> findByTenantIdAndCustomerIdOrderByCreatedAtDesc(UUID tenantId, UUID customerId);
     List<Order> findByTenantIdAndCustomerEmailIgnoreCaseOrderByCreatedAtDesc(UUID tenantId, String customerEmail);
     long countByTenantId(UUID tenantId);
+
+    // Pix em aberto do mesmo e-mail na loja (limite contra travar o estoque com reservas)
+    long countByTenantIdAndCustomerEmailIgnoreCaseAndStatusAndCreatedAtAfter(
+            UUID tenantId, String customerEmail, com.example.saasecommerce.model.OrderStatus status, java.time.LocalDateTime after);
+
+    // Pedidos pendentes vencidos, em lotes
+    List<Order> findTop100ByStatusAndCreatedAtBefore(com.example.saasecommerce.model.OrderStatus status, java.time.LocalDateTime before);
     long countByTenantIdAndCustomerId(UUID tenantId, UUID customerId);
 }

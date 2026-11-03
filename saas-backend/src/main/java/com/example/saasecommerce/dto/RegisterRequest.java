@@ -15,17 +15,20 @@ import lombok.NoArgsConstructor;
 public class RegisterRequest {
 
         @NotBlank(message = "O nome é obrigatório")
+        @Size(max = 100, message = "O nome pode ter no máximo 100 caracteres")
         private String name;
 
         @NotBlank(message = "O e-mail é obrigatório")
         @Email(message = "Formato de e-mail inválido")
+        @Size(max = 254, message = "E-mail longo demais")
         private String email;
 
         @NotBlank(message = "A senha é obrigatória")
-        @Size(min = 6, message = "A senha deve ter no mínimo 6 caracteres")
+        @Size(min = 8, max = 128, message = "A senha deve ter entre 8 e 128 caracteres")
         private String password;
 
         // NOVO CAMPO: O nome da loja que será criada automaticamente
         @NotBlank(message = "O nome da loja é obrigatório")
+        @Size(max = 60, message = "O nome da loja pode ter no máximo 60 caracteres")
         private String storeName;
 }

@@ -16,6 +16,7 @@ public class SavePaymentGatewayRequest {
     private String clientId;
     private String clientSecret;
     private String publicKey;
+    private String webhookSecret;
     private BigDecimal feePercentage;
     private BigDecimal feeFixed;
 }

@@ -47,8 +47,6 @@ public class TenantService {
     private static final Set<String> FONTS = Set.of(
             "Inter", "Roboto", "Playfair Display", "Poppins", "Nunito", "Raleway", "Montserrat", "Space Grotesk");
     private static final Pattern HEX_COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
-    // Imagens em base64 (upload do painel) podem ser grandes; limita para não estourar o banco
-    private static final int MAX_IMAGE_LENGTH = 3_000_000;
 
     // Regra de Negócio 3: Atualizar configurações da loja
     public Tenant updateTenantSettings(java.util.UUID id, TenantSettingsRequest req) {
@@ -77,8 +75,8 @@ public class TenantService {
         if (req.announcementText() != null) tenant.setAnnouncementText(blankToNull(limitText(req.announcementText(), 120, "Aviso")));
         if (req.footerText() != null) tenant.setFooterText(blankToNull(limitText(req.footerText(), 300, "Texto do rodapé")));
 
-        if (req.logoUrl() != null) tenant.setLogoUrl(validImage(req.logoUrl(), "Logo"));
-        if (req.bannerUrl() != null) tenant.setBannerUrl(validImage(req.bannerUrl(), "Banner"));
+        if (req.logoUrl() != null) tenant.setLogoUrl(InputValidator.image(req.logoUrl(), "Logo"));
+        if (req.bannerUrl() != null) tenant.setBannerUrl(InputValidator.image(req.bannerUrl(), "Banner"));
 
         if (req.discordUrl() != null) tenant.setDiscordUrl(validLink(req.discordUrl(), "Discord"));
         if (req.whatsappUrl() != null) tenant.setWhatsappUrl(validLink(req.whatsappUrl(), "WhatsApp"));
@@ -102,17 +100,6 @@ public class TenantService {
 
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value;
-    }
-
-    // Só aceita imagem enviada pelo painel (data:image/...) ou link https
-    private static String validImage(String value, String field) {
-        String v = value.trim();
-        if (v.isEmpty()) return null;
-        if (v.length() > MAX_IMAGE_LENGTH) throw new IllegalArgumentException(field + " muito grande. Envie uma imagem menor.");
-        if (!v.startsWith("data:image/") && !v.startsWith("https://")) {
-            throw new IllegalArgumentException(field + " inválido.");
-        }
-        return v;
     }
 
     // Links públicos: só https, para não permitir "javascript:" ou outros esquemas na vitrine

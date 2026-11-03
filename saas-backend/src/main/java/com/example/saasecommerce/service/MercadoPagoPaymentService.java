@@ -18,7 +18,16 @@ import java.util.UUID;
 @Slf4j
 public class MercadoPagoPaymentService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    // Timeouts: sem eles, um Mercado Pago lento prenderia as threads do servidor em cada checkout
+    private final RestTemplate restTemplate = buildRestTemplate();
+
+    private static RestTemplate buildRestTemplate() {
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5_000);
+        factory.setReadTimeout(10_000);
+        return new RestTemplate(factory);
+    }
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Data
@@ -37,7 +46,8 @@ public class MercadoPagoPaymentService {
             String description,
             String customerEmail,
             String customerName,
-            String customerCpf
+            String customerCpf,
+            int expirationMinutes
     ) {
         try {
             String url = "https://api.mercadopago.com/v1/payments";
@@ -51,6 +61,10 @@ public class MercadoPagoPaymentService {
             body.put("transaction_amount", amount);
             body.put("description", description);
             body.put("payment_method_id", "pix");
+            // O Pix vence junto com a reserva da chave; depois disso o Mercado Pago não aceita mais o pagamento
+            body.put("date_of_expiration", java.time.OffsetDateTime.now(java.time.ZoneOffset.of("-03:00"))
+                    .plusMinutes(expirationMinutes)
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")));
 
             Map<String, Object> payer = new HashMap<>();
             payer.put("email", (customerEmail != null && customerEmail.contains("@")) ? customerEmail : "cliente@exemplo.com");

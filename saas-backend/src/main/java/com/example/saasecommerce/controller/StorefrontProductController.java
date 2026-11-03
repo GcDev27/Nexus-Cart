@@ -35,7 +35,7 @@ public class StorefrontProductController {
             @PathVariable String productSlug) {
 
         Tenant tenant = tenantService.getTenantBySlug(tenantSlug);
-        Product produto = productService.getProductBySlugAndTenant(productSlug, tenant.getId());
+        Product produto = productService.getVisibleProductBySlug(productSlug, tenant.getId());
         return ResponseEntity.ok(produto);
     }
 }

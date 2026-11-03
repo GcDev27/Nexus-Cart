@@ -74,6 +74,9 @@ public class PaymentGatewayConfigService {
         if (request.getClientSecret() != null && !request.getClientSecret().isBlank() && !request.getClientSecret().startsWith("****")) {
             config.setClientSecret(request.getClientSecret());
         }
+        if (request.getWebhookSecret() != null && !request.getWebhookSecret().isBlank()) {
+            config.setWebhookSecret(request.getWebhookSecret().trim());
+        }
         if (request.getPublicKey() != null) {
             config.setPublicKey(request.getPublicKey());
         }
@@ -126,6 +129,7 @@ public class PaymentGatewayConfigService {
                 .clientId(config.getClientId() != null ? config.getClientId() : "")
                 .clientSecret(maskedSecret)
                 .publicKey(config.getPublicKey() != null ? config.getPublicKey() : "")
+                .hasWebhookSecret(config.getWebhookSecret() != null && !config.getWebhookSecret().isBlank())
                 .feePercentage(config.getFeePercentage())
                 .feeFixed(config.getFeeFixed())
                 .build();

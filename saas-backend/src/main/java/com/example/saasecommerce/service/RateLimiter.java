@@ -1,6 +1,7 @@
 package com.example.saasecommerce.service;
 
 import com.example.saasecommerce.exception.TooManyRequestsException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayDeque;
@@ -39,6 +40,22 @@ public class RateLimiter {
 
     public void reset(String key) {
         hits.remove(key);
+    }
+
+    /** Limpa contadores sem atividade recente, para o mapa não crescer sem limite sob ataque. */
+    @Scheduled(fixedDelay = 5 * 60_000)
+    public void evictIdle() {
+        long cutoff = System.currentTimeMillis() - 2 * 60 * 60_000; // maior janela usada é 1 hora
+        hits.entrySet().removeIf(entry -> {
+            Deque<Long> queue = entry.getValue();
+            synchronized (queue) {
+                return queue.isEmpty() || queue.peekLast() < cutoff;
+            }
+        });
+    }
+
+    int trackedKeys() {
+        return hits.size();
     }
 
     private int count(String key, long windowMillis) {

@@ -31,16 +31,12 @@ public class VariationService {
         Product product = productRepository.findByIdAndTenantId(productId, tenantId)
                 .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado ou não pertence a esta loja"));
 
-        Variation variation = Variation.builder()
-                .name(request.getName())
-                .price(request.getPrice())
-                .compareAtPrice(request.getCompareAtPrice())
-                .deliveryType(request.getDeliveryType())
-                .chatInitialMessage(request.getChatInitialMessage())
-                .hasUnlimitedStock(request.isHasUnlimitedStock())
-                .stockQuantity(request.getStockQuantity())
-                .product(product)
-                .build();
+        if (variationRepository.findAllByProductIdOrderByCreatedAtAsc(productId).size() >= 50) {
+            throw new IllegalArgumentException("Um produto pode ter no máximo 50 opções.");
+        }
+
+        Variation variation = Variation.builder().product(product).build();
+        apply(variation, request);
 
         Variation saved = variationRepository.save(variation);
         return toResponse(saved);
@@ -69,16 +65,27 @@ public class VariationService {
     public VariationResponse updateVariation(UUID variationId, UUID tenantId, CreateVariationRequest request) {
         Variation variation = findVariationWithTenantCheck(variationId, tenantId);
 
-        variation.setName(request.getName());
-        variation.setPrice(request.getPrice());
-        variation.setCompareAtPrice(request.getCompareAtPrice());
-        variation.setDeliveryType(request.getDeliveryType());
-        variation.setChatInitialMessage(request.getChatInitialMessage());
-        variation.setHasUnlimitedStock(request.isHasUnlimitedStock());
-        variation.setStockQuantity(request.getStockQuantity());
+        apply(variation, request);
 
         Variation saved = variationRepository.save(variation);
         return toResponse(saved);
+    }
+
+    // Copia só os campos editáveis, já validados
+    private static void apply(Variation variation, CreateVariationRequest request) {
+        variation.setName(InputValidator.text(request.getName(), 1, 80, "Nome da opção"));
+        variation.setPrice(InputValidator.price(request.getPrice(), "Preço"));
+        variation.setCompareAtPrice(request.getCompareAtPrice() == null ? null : InputValidator.price(request.getCompareAtPrice(), "Preço \"de\""));
+        variation.setDeliveryType(request.getDeliveryType());
+        variation.setChatInitialMessage(InputValidator.optionalText(request.getChatInitialMessage(), 1000, "Mensagem após o pagamento"));
+        variation.setHasUnlimitedStock(request.isHasUnlimitedStock());
+        variation.setStockQuantity(stockQuantity(request.getStockQuantity()));
+    }
+
+    static Integer stockQuantity(Integer value) {
+        if (value == null) return null;
+        if (value < 0 || value > 1_000_000) throw new IllegalArgumentException("Estoque precisa estar entre 0 e 1.000.000.");
+        return value;
     }
 
     // ─── DELETE ──────────────────────────────────────────────────────
@@ -97,8 +104,15 @@ public class VariationService {
             throw new IllegalArgumentException("Linhas de estoque só podem ser adicionadas a variações com entrega automática");
         }
 
+        if (lines.size() > 1000) {
+            throw new IllegalArgumentException("Envie no máximo 1.000 chaves por vez.");
+        }
+        if (lines.stream().anyMatch(line -> line != null && line.trim().length() > 500)) {
+            throw new IllegalArgumentException("Cada chave pode ter no máximo 500 caracteres.");
+        }
+
         List<StockLine> stockLines = lines.stream()
-                .filter(line -> !line.isBlank()) // Ignora linhas vazias
+                .filter(line -> line != null && !line.isBlank()) // Ignora linhas vazias
                 .map(line -> StockLine.builder()
                         .content(line.trim())
                         .isDelivered(false)

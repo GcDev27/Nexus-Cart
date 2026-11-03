@@ -1,13 +1,15 @@
 package com.example.saasecommerce;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class SaasEcommerceApplicationTests {
+import static org.assertj.core.api.Assertions.assertThat;
+
+class SaasEcommerceApplicationTests extends IntegrationTest {
 
     @Test
-    void contextLoads() {
+    void sobeComAsMigrationsAplicadas() {
+        Integer applied = jdbc.queryForObject(
+                "select count(*) from flyway_schema_history where success", Integer.class);
+        assertThat(applied).isGreaterThanOrEqualTo(2);
     }
-
 }

@@ -247,9 +247,9 @@ function LoginContent() {
               </label>
 
               <label className="block">
-                <span className="block text-sm mb-1.5">Senha <span className="text-[var(--text-secondary)]">(mínimo 6 caracteres)</span></span>
+                <span className="block text-sm mb-1.5">Senha <span className="text-[var(--text-secondary)]">(mínimo 8 caracteres)</span></span>
                 <span className="relative block">
-                  <input type={showPassword ? 'text' : 'password'} required minLength={6} autoComplete="new-password" value={regPassword}
+                  <input type={showPassword ? 'text' : 'password'} required minLength={8} autoComplete="new-password" value={regPassword}
                     onChange={e => setRegPassword(e.target.value)} className={fieldClass} style={fieldStyle} />
                   {passwordToggle}
                 </span>

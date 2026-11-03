@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
+import { errorMessage } from '@/app/lib/apiTypes';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
@@ -65,8 +66,8 @@ export default function RegisterPage() {
 
       localStorage.setItem('token', data.token);
       router.push('/admin');
-    } catch (err: any) {
-      setError(err.message || 'Ocorreu um erro ao registrar.');
+    } catch (err) {
+      setError(errorMessage(err) || 'Ocorreu um erro ao registrar.');
     } finally {
       setLoading(false);
     }
@@ -170,7 +171,7 @@ export default function RegisterPage() {
                       onChange={handleChange}
                       placeholder="Mínimo 6 dígitos"
                       required
-                      minLength={6}
+                      minLength={8}
                       className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-4 py-3 pr-10 text-on-surface text-sm placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary transition-all shadow-inner"
                     />
                     <button
@@ -195,7 +196,7 @@ export default function RegisterPage() {
                       onChange={handleChange}
                       placeholder="Repita a senha"
                       required
-                      minLength={6}
+                      minLength={8}
                       className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-4 py-3 pr-10 text-on-surface text-sm placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary transition-all shadow-inner"
                     />
                     <button

@@ -20,7 +20,7 @@ interface OrderDetail {
   productName: string;
   variationName: string;
   amount: number;
-  status: "PENDING" | "PAID" | "CANCELLED" | "REFUNDED";
+  status: "PENDING" | "PAID" | "CANCELLED" | "REFUNDED" | "EXPIRED";
   deliveredContent?: string;
   createdAt: string;
 }
@@ -437,10 +437,12 @@ export default function AdminClientesPage() {
                                 className={`px-2 py-0.5 rounded font-semibold ${
                                   o.status === "PAID"
                                     ? "bg-secondary-container/20 text-secondary"
-                                    : "bg-amber-400/10 text-amber-400"
+                                    : o.status === "PENDING"
+                                      ? "bg-amber-400/10 text-amber-400"
+                                      : "bg-surface-container text-outline"
                                 }`}
                               >
-                                {o.status === "PAID" ? "Aprovado" : "Aguardando"}
+                                {o.status === "PAID" ? "Aprovado" : o.status === "PENDING" ? "Aguardando" : o.status === "EXPIRED" ? "Expirado" : "Cancelado"}
                               </span>
                             </div>
 

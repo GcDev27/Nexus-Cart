@@ -6,7 +6,7 @@ import { useToast } from "../../components/Toast";
 
 interface OrderItem {
   orderId: string;
-  status: "PENDING" | "PAID" | "CANCELLED" | "REFUNDED";
+  status: "PENDING" | "PAID" | "CANCELLED" | "REFUNDED" | "EXPIRED";
   amount: number;
   productName: string;
   variationName: string;
@@ -365,7 +365,7 @@ export default function AdminPedidosPage() {
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-outline font-label-xs text-label-xs">
-                              Cancelado
+                              {order.status === "EXPIRED" ? "Expirado" : "Cancelado"}
                             </span>
                           )}
                         </td>

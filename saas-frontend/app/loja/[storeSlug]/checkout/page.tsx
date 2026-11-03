@@ -60,7 +60,7 @@ function CheckoutContent() {
 
   const [order, setOrder] = useState<OrderData | null>(null);
   const [copied, setCopied] = useState<'pix' | 'key' | null>(null);
-  const [timeLeft, setTimeLeft] = useState(900);
+  const [timeLeft, setTimeLeft] = useState(1800);
   const [checkingStatus, setCheckingStatus] = useState(false);
 
   const socials = useSocialLinks();

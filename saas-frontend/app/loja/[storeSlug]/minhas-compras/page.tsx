@@ -11,7 +11,7 @@ import { AnnouncementBar, StoreFooter, StoreHeader } from '../../../components/s
 
 interface OrderItem {
   orderId: string;
-  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  status: 'PENDING' | 'PAID' | 'CANCELLED' | 'EXPIRED';
   amount: number;
   productName: string;
   variationName: string;
@@ -226,6 +226,11 @@ export default function MinhasComprasPage() {
                           {order.status === 'CANCELLED' && (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/15 text-red-500">
                               <XCircle className="w-3.5 h-3.5" /> Cancelado
+                            </span>
+                          )}
+                          {order.status === 'EXPIRED' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--surface-hover)] text-[var(--text-secondary)]">
+                              <Clock className="w-3.5 h-3.5" /> Pix expirado
                             </span>
                           )}
                         </div>

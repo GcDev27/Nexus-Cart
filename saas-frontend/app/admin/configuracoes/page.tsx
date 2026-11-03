@@ -65,6 +65,7 @@ interface GatewayConfig {
   publicKey?: string;
   feePercentage?: number;
   feeFixed?: number;
+  hasWebhookSecret?: boolean;
 }
 
 // ─── Constantes de Design da Loja ──────────────────────────────────
@@ -199,7 +200,7 @@ const GATEWAY_DETAILS: Record<GatewayProvider, {
   brandBorder: string;
   portalUrl: string;
   supportsPix: boolean;
-  fields: { key: 'clientId' | 'clientSecret' | 'publicKey'; label: string; placeholder: string; isSecret?: boolean; hint: string }[];
+  fields: { key: 'clientId' | 'clientSecret' | 'publicKey' | 'webhookSecret'; label: string; placeholder: string; isSecret?: boolean; hint: string }[];
   tutorial: {
     prerequisite: string;
     steps: { title: string; desc: string }[];
@@ -229,6 +230,13 @@ const GATEWAY_DETAILS: Record<GatewayProvider, {
         label: 'Public Key (Opcional para checkout)', 
         placeholder: 'APP_USR-00000000-...', 
         hint: 'Chave pública usada para tokenização de cartão.'
+      },
+      {
+        key: 'webhookSecret',
+        label: 'Assinatura secreta do webhook (recomendado)',
+        placeholder: 'Cole a assinatura secreta das notificações',
+        isSecret: true,
+        hint: 'Em Suas integrações > Webhooks, copie a "Assinatura secreta". Com ela, só notificações enviadas pelo Mercado Pago são aceitas.'
       }
     ],
     tutorial: {
@@ -563,6 +571,7 @@ export default function SettingsPage() {
     clientId: string;
     clientSecret: string;
     publicKey: string;
+    webhookSecret: string;
     enabled: boolean;
     hasFeeAdjust: boolean;
     feePercentage: number;
@@ -570,6 +579,7 @@ export default function SettingsPage() {
     clientId: '',
     clientSecret: '',
     publicKey: '',
+    webhookSecret: '',
     enabled: false,
     hasFeeAdjust: false,
     feePercentage: 0
@@ -674,6 +684,8 @@ export default function SettingsPage() {
       clientId: config.clientId || '',
       clientSecret: config.clientSecret || '',
       publicKey: config.publicKey || '',
+      // A assinatura nunca volta da API; em branco mantém a que já está salva
+      webhookSecret: '',
       enabled: config.enabled,
       hasFeeAdjust: !!config.feePercentage && config.feePercentage > 0,
       feePercentage: config.feePercentage || 0
@@ -695,6 +707,7 @@ export default function SettingsPage() {
           clientId: gatewayForm.clientId,
           clientSecret: gatewayForm.clientSecret,
           publicKey: gatewayForm.publicKey,
+          webhookSecret: gatewayForm.webhookSecret,
           feePercentage: gatewayForm.hasFeeAdjust ? gatewayForm.feePercentage : 0
         })
       });
@@ -1431,9 +1444,11 @@ export default function SettingsPage() {
                           ...gatewayForm,
                           [field.key]: e.target.value
                         })}
-                        placeholder={field.placeholder}
+                        placeholder={field.key === 'webhookSecret' && getGatewayConfig(editingProvider).hasWebhookSecret
+                          ? 'Já cadastrada. Deixe em branco para manter.'
+                          : field.placeholder}
                         className="w-full bg-[#101014] border border-zinc-800 focus:border-zinc-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-zinc-600 outline-none transition-colors"
-                        required={field.key !== 'publicKey'}
+                        required={field.key !== 'publicKey' && field.key !== 'webhookSecret'}
                       />
 
                       {field.isSecret && (

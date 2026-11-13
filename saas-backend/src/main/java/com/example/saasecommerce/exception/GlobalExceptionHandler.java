@@ -31,6 +31,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 
+    @ExceptionHandler(com.example.saasecommerce.service.SubscriptionService.PlanFeatureException.class)
+    public ResponseEntity<Map<String, Object>> handlePlanFeature(RuntimeException ex) {
+        return error(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(com.example.saasecommerce.service.SubscriptionService.StorePausedException.class)
+    public ResponseEntity<Map<String, Object>> handleStorePaused(RuntimeException ex) {
+        return error(HttpStatus.LOCKED, ex.getMessage());
+    }
+
+    private static ResponseEntity<Map<String, Object>> error(HttpStatus status, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status.value());
+        body.put("error", message);
+        return ResponseEntity.status(status).body(body);
+    }
+
     @ExceptionHandler(TooManyRequestsException.class)
     public ResponseEntity<Map<String, Object>> handleTooManyRequests(TooManyRequestsException ex) {
         Map<String, Object> body = new HashMap<>();

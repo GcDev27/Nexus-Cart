@@ -16,35 +16,29 @@ import java.util.UUID;
 public class TenantController {
 
     private final TenantService tenantService;
+    private final com.example.saasecommerce.service.SubscriptionService subscriptionService;
 
     // DTOs para organizar a entrada e a saída
-    public record TenantRequestDTO(String name, String slug) {}
     public record TenantResponseDTO(
             UUID id, String name, String slug,
             String theme, String primaryColor, String font, String cornerStyle,
             String heroTitle, String heroDescription, String announcementText, String footerText,
             String logoUrl, String bannerUrl,
-            String discordUrl, String whatsappUrl, String instagramUrl) {}
-
-    // Rota POST: Cria a loja (O Next.js vai chamar isso ao cadastrar um cliente)
-    @PostMapping
-    public ResponseEntity<TenantResponseDTO> createTenant(@RequestBody TenantRequestDTO request) {
-        Tenant tenant = tenantService.createTenant(request.name(), request.slug());
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapToDto(tenant));
-    }
+            String discordUrl, String whatsappUrl, String instagramUrl,
+            boolean storeOpen) {}
 
     // Rota GET: Busca a loja pelo slug (O Next.js vai chamar isso para carregar a vitrine)
     @GetMapping("/{slug}")
     public ResponseEntity<TenantResponseDTO> getTenantBySlug(@PathVariable String slug) {
         Tenant tenant = tenantService.getTenantBySlug(slug);
-        return ResponseEntity.ok(mapToDto(tenant));
+        return ResponseEntity.ok(publicDto(tenant));
     }
 
     // Rota GET: Busca a loja pelo ID (O Next.js vai chamar isso no painel admin)
     @GetMapping("/id/{id}")
     public ResponseEntity<TenantResponseDTO> getTenantById(@PathVariable UUID id) {
         Tenant tenant = tenantService.getTenantById(id);
-        return ResponseEntity.ok(mapToDto(tenant));
+        return ResponseEntity.ok(publicDto(tenant));
     }
 
     // Rota GET: Busca a loja do usuário autenticado
@@ -67,6 +61,16 @@ public class TenantController {
         return ResponseEntity.ok(mapToDto(updatedTenant));
     }
 
+    /** Vitrine: no Starter a loja usa o visual padrão, mesmo que algo tenha sido salvo antes num plano maior. */
+    private TenantResponseDTO publicDto(Tenant t) {
+        TenantResponseDTO d = mapToDto(t);
+        if (t.getPlan().customDesign()) return d;
+        return new TenantResponseDTO(
+                d.id(), d.name(), d.slug(), "theme-glass", "#8b5cf6", "Inter", "rounded",
+                d.heroTitle(), d.heroDescription(), d.announcementText(), d.footerText(), null, null,
+                d.discordUrl(), d.whatsappUrl(), d.instagramUrl(), d.storeOpen());
+    }
+
     private TenantResponseDTO mapToDto(Tenant t) {
         return new TenantResponseDTO(
                 t.getId(), t.getName(), t.getSlug(),
@@ -74,6 +78,7 @@ public class TenantController {
                 t.getCornerStyle() != null ? t.getCornerStyle() : "rounded",
                 t.getHeroTitle(), t.getHeroDescription(), t.getAnnouncementText(), t.getFooterText(),
                 t.getLogoUrl(), t.getBannerUrl(),
-                t.getDiscordUrl(), t.getWhatsappUrl(), t.getInstagramUrl());
+                t.getDiscordUrl(), t.getWhatsappUrl(), t.getInstagramUrl(),
+                subscriptionService.isStoreOpen(t));
     }
 }

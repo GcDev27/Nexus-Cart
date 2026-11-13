@@ -37,6 +37,7 @@ public class OrderCheckoutService {
     private final PaymentGatewayConfigRepository gatewayConfigRepository;
     private final MercadoPagoPaymentService mercadoPagoPaymentService;
     private final ChatService chatService;
+    private final SubscriptionService subscriptionService;
 
     /**
      * Pix "de mentira" e aprovação manual de pedidos só existem em desenvolvimento.
@@ -49,6 +50,9 @@ public class OrderCheckoutService {
     public OrderResponse createOrder(CreateOrderRequest request, Customer currentCustomer) {
         Tenant tenant = tenantRepository.findBySlug(request.getTenantSlug())
                 .orElseThrow(() -> new IllegalArgumentException("Loja não encontrada"));
+        if (!subscriptionService.isStoreOpen(tenant)) {
+            throw new IllegalStateException("Esta loja está temporariamente sem receber pedidos.");
+        }
 
         Variation variation = variationRepository.findById(request.getVariationId())
                 .orElseThrow(() -> new IllegalArgumentException("Variação do produto não encontrada"));

@@ -31,4 +31,11 @@ public class RegisterRequest {
         @NotBlank(message = "O nome da loja é obrigatório")
         @Size(max = 60, message = "O nome da loja pode ter no máximo 60 caracteres")
         private String storeName;
+
+        // Plano escolhido para o teste grátis (STARTER, SUPER ou RICH). Vazio = Super.
+        @Size(max = 20)
+        private String plan;
+
+        @jakarta.validation.constraints.AssertTrue(message = "Aceite os Termos de uso e a Política de privacidade para continuar")
+        private boolean acceptedTerms;
 }

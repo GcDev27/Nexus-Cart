@@ -27,6 +27,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final RateLimiter rateLimiter;
+    private final SubscriptionService subscriptionService;
 
     // Limite de senhas erradas por e-mail: 8 tentativas a cada 10 minutos
     private static final int MAX_LOGIN_FAILURES = 8;
@@ -57,6 +58,7 @@ public class AuthenticationService {
         Tenant tenant = new Tenant();
         tenant.setName(request.getStoreName());
         tenant.setSlug(storeSlug);
+        subscriptionService.startTrial(tenant, com.example.saasecommerce.model.Plan.parse(request.getPlan()));
         var savedTenant = tenantRepository.save(tenant);
 
         // 3. Instancia e salva o Utilizador Lojista, atrelando o ID da nova loja a ele
@@ -65,6 +67,7 @@ public class AuthenticationService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setTenantId(savedTenant.getId());
+        user.setTermsAcceptedAt(java.time.LocalDateTime.now());
 
         // Caso o seu modelo User exija um Role obrigatório, descomente e ajuste a linha abaixo:
         // user.setRole(Role.ADMIN);

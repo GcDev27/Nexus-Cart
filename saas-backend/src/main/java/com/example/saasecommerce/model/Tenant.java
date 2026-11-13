@@ -78,6 +78,30 @@ public class Tenant {
     private String instagramUrl;
     // ---------------------------------------------
 
+    // --- Plano e assinatura do NexusCart ---
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Plan plan = Plan.SUPER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "subscription_status", nullable = false, length = 20)
+    @Builder.Default
+    private SubscriptionStatus subscriptionStatus = SubscriptionStatus.TRIALING;
+
+    @Column(name = "trial_ends_at")
+    private LocalDateTime trialEndsAt;
+
+    // Até quando a mensalidade está paga
+    @Column(name = "paid_until")
+    private LocalDateTime paidUntil;
+
+    @Column(name = "asaas_customer_id", length = 64)
+    private String asaasCustomerId;
+
+    @Column(name = "asaas_subscription_id", length = 64)
+    private String asaasSubscriptionId;
+
     // Esse método roda automaticamente antes de salvar no banco para preencher a data
     @PrePersist
     protected void onCreate() {

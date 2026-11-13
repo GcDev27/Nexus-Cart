@@ -59,6 +59,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 new Rule("login", "POST", "/api/storefront/customer/login", null, loginPer10Min, 10 * MINUTE),
                 new Rule("register", "POST", "/api/auth/register", null, registerPerHour, 60 * MINUTE),
                 new Rule("register", "POST", "/api/storefront/customer/register", null, registerPerHour, 60 * MINUTE),
+                new Rule("password", "POST", "/api/auth/forgot-password", null, registerPerHour, 60 * MINUTE),
+                new Rule("password", "POST", "/api/auth/reset-password", null, loginPer10Min, 10 * MINUTE),
+                new Rule("password", "POST", "/api/storefront/customer/forgot-password", null, registerPerHour, 60 * MINUTE),
+                new Rule("password", "POST", "/api/storefront/customer/reset-password", null, loginPer10Min, 10 * MINUTE),
                 new Rule("webhook", null, "/api/webhooks/", null, webhookPerMinute, MINUTE)
         );
     }

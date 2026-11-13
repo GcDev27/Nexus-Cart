@@ -46,6 +46,10 @@ public class Customer implements UserDetails {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    // Tokens emitidos antes da última troca de senha deixam de valer
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     @PrePersist
     protected void onCreate() {
         if (this.createdAt == null) {

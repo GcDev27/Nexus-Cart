@@ -25,6 +25,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final UserDetailsService userDetailsService;
     private final com.example.saasecommerce.repository.CustomerRepository customerRepository;
 
+    /** Depois de redefinir a senha, sessões abertas antes disso param de valer. */
+    private boolean issuedBeforePasswordChange(String jwt, UserDetails userDetails) {
+        java.time.LocalDateTime changedAt = null;
+        if (userDetails instanceof com.example.saasecommerce.model.User u) changedAt = u.getPasswordChangedAt();
+        if (userDetails instanceof com.example.saasecommerce.model.Customer c) changedAt = c.getPasswordChangedAt();
+        if (changedAt == null) return false;
+        java.util.Date issuedAt = jwtService.extractIssuedAt(jwt);
+        if (issuedAt == null) return true;
+        // O iat do JWT tem precisão de segundos
+        long changedSecond = changedAt.atZone(java.time.ZoneId.systemDefault()).toEpochSecond();
+        return issuedAt.toInstant().getEpochSecond() < changedSecond;
+    }
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
@@ -69,7 +82,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 // 5. Valida se o token pertence a este utilizador e se não expirou
-                if (userDetails != null && jwtService.isTokenValid(jwt, userDetails)) {
+                if (userDetails != null && jwtService.isTokenValid(jwt, userDetails)
+                        && !issuedBeforePasswordChange(jwt, userDetails)) {
 
                     // Cria o "Crachá de Acesso" do Spring Security
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

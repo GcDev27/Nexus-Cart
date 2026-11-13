@@ -49,6 +49,10 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/v1/tenants/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                // Sem login (ou com sessão expirada/derrubada): 401, para o frontend mandar ao login.
+                // Logado mas sem permissão continua 403.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

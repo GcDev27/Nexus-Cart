@@ -17,6 +17,7 @@ public class StorefrontProductController {
 
     private final ProductService productService;
     private final TenantService tenantService;
+    private final com.example.saasecommerce.service.SubscriptionService subscriptionService;
 
     // Lista todos os produtos visíveis da loja
     @GetMapping
@@ -24,6 +25,7 @@ public class StorefrontProductController {
             @RequestHeader("X-Tenant-Slug") String tenantSlug) {
 
         Tenant tenant = tenantService.getTenantBySlug(tenantSlug);
+        subscriptionService.requireOpen(tenant);
         List<Product> produtos = productService.getProductsByTenantAndVisibility(tenant.getId(), "VISIBLE");
         return ResponseEntity.ok(produtos);
     }
@@ -35,6 +37,7 @@ public class StorefrontProductController {
             @PathVariable String productSlug) {
 
         Tenant tenant = tenantService.getTenantBySlug(tenantSlug);
+        subscriptionService.requireOpen(tenant);
         Product produto = productService.getVisibleProductBySlug(productSlug, tenant.getId());
         return ResponseEntity.ok(produto);
     }

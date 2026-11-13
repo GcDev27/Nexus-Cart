@@ -18,6 +18,24 @@ import java.util.List;
 public class StorefrontCustomerController {
 
     private final CustomerService customerService;
+    private final com.example.saasecommerce.service.PasswordResetService passwordResetService;
+
+    public record ForgotPasswordRequest(String email) {}
+    public record ResetPasswordRequest(String token, String password) {}
+
+    // Sempre 200, exista o e-mail ou não
+    @PostMapping("/forgot-password")
+    public ResponseEntity<java.util.Map<String, String>> forgotPassword(
+            @RequestParam("storeSlug") String storeSlug, @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestForCustomer(storeSlug, request.email());
+        return ResponseEntity.ok(java.util.Map.of("message", "Se o e-mail estiver cadastrado, enviamos um link para redefinir a senha."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<java.util.Map<String, String>> resetPassword(@RequestBody ResetPasswordRequest request) {
+        var type = passwordResetService.reset(request.token(), request.password());
+        return ResponseEntity.ok(java.util.Map.of("accountType", type.name()));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<CustomerAuthResponse> register(

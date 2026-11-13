@@ -14,21 +14,7 @@ import java.util.regex.Pattern;
 public class TenantService {
 
     private final TenantRepository tenantRepository;
-
-    // Regra de Negócio 1: Criar uma loja nova
-    public Tenant createTenant(String name, String slug) {
-        // Verifica se a URL já está sendo usada por outra loja
-        if (tenantRepository.findBySlug(slug).isPresent()) {
-            throw new IllegalArgumentException("Esta URL já está em uso por outra loja!");
-        }
-
-        Tenant newTenant = Tenant.builder()
-                .name(name)
-                .slug(slug)
-                .build();
-
-        return tenantRepository.save(newTenant); // Salva no Postgres!
-    }
+    private final SubscriptionService subscriptionService;
 
     // Regra de Negócio 2: Buscar uma loja pelo slug
     public Tenant getTenantBySlug(String slug) {
@@ -60,6 +46,17 @@ public class TenantService {
             }
             tenant.setName(name);
         }
+
+        // Starter não personaliza o visual. Reenviar o valor atual (o formulário manda tudo) é permitido.
+        if (!tenant.getPlan().customDesign()) {
+            boolean changesDesign =
+                    changes(req.theme(), tenant.getTheme()) || changes(req.cornerStyle(), tenant.getCornerStyle() != null ? tenant.getCornerStyle() : "rounded")
+                    || changes(req.font(), tenant.getFont())
+                    || (req.primaryColor() != null && !req.primaryColor().equalsIgnoreCase(tenant.getPrimaryColor()))
+                    || changes(blankToNull(req.logoUrl()), tenant.getLogoUrl()) && req.logoUrl() != null
+                    || changes(blankToNull(req.bannerUrl()), tenant.getBannerUrl()) && req.bannerUrl() != null;
+            if (changesDesign) subscriptionService.requireCustomDesign(tenant);
+        }
         if (req.theme() != null) tenant.setTheme(requireOneOf(req.theme(), THEMES, "Template inválido."));
         if (req.cornerStyle() != null) tenant.setCornerStyle(requireOneOf(req.cornerStyle(), CORNER_STYLES, "Estilo de cantos inválido."));
         if (req.font() != null) tenant.setFont(requireOneOf(req.font(), FONTS, "Fonte não suportada."));
@@ -83,6 +80,10 @@ public class TenantService {
         if (req.instagramUrl() != null) tenant.setInstagramUrl(validLink(req.instagramUrl(), "Instagram"));
 
         return tenantRepository.save(tenant);
+    }
+
+    private static boolean changes(String requested, String current) {
+        return requested != null && !requested.equals(current);
     }
 
     private static String requireOneOf(String value, Set<String> allowed, String error) {

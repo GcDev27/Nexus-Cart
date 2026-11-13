@@ -192,6 +192,23 @@ Conversas de pedido são criadas automaticamente quando um pedido com **entrega 
 
 Opcionais: `FORWARD_HEADERS_STRATEGY` (`native` atrás de proxy, `none` com o backend exposto direto), `DDL_AUTO` (padrão `validate`; o esquema vem das migrations do Flyway) e os limites `RATE_LIMIT_*` (veja `saas-backend/.env.example`).
 
+### Planos e mensalidade (Asaas)
+
+Cada loja começa com 7 dias grátis do plano escolhido (Starter R$ 20, Super R$ 40, Rich R$ 70). O lojista assina em **Meu plano** e paga a mensalidade por Pix, boleto ou cartão na página do Asaas. Se o teste acabar sem pagamento, ou a mensalidade atrasar mais de 3 dias, a vitrine e o checkout ficam pausados. O painel e as compras já feitas continuam acessíveis.
+
+1. Crie uma conta no [sandbox do Asaas](https://sandbox.asaas.com) para testar e gere a chave de API.
+2. Defina `ASAAS_API_URL`, `ASAAS_API_KEY` e um `ASAAS_WEBHOOK_TOKEN` (um valor aleatório seu).
+3. No painel do Asaas, em **Integrações > Webhooks**, cadastre `https://SEU-BACKEND/api/webhooks/asaas` com os eventos de cobrança e de assinatura, e o mesmo token em "Token de autenticação".
+4. Para produção, troque a URL para `https://api.asaas.com/v3`, use a chave de produção e cadastre o webhook de novo na conta de produção.
+
+### E-mail ("esqueci minha senha")
+
+Configure `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` e `MAIL_FROM` com o SMTP de qualquer provedor (Brevo e Resend têm plano grátis). Defina também `PUBLIC_APP_URL`, que é o endereço do site e vai no link do e-mail. Sem SMTP, o link aparece só no log do backend.
+
+### Termos e privacidade
+
+As páginas `/termos` e `/privacidade` usam `NEXT_PUBLIC_LEGAL_OPERATOR`, `NEXT_PUBLIC_LEGAL_DOCUMENT`, `NEXT_PUBLIC_CONTACT_EMAIL` e `NEXT_PUBLIC_LEGAL_CITY`. O texto é um modelo: revise antes de publicar.
+
 ### Webhook do Mercado Pago
 
 No painel do Mercado Pago, em **Suas integrações > Webhooks**, aponte as notificações de pagamento para `https://SEU-BACKEND/api/webhooks/mercadopago` e copie a **Assinatura secreta** para o campo de mesmo nome em *Configurações > Gateways de Pagamento*. Com ela cadastrada, notificações sem assinatura válida recebem 401. Mesmo assim, o status do pagamento é sempre confirmado direto na API do Mercado Pago.

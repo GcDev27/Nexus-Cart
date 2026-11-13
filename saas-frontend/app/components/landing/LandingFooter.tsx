@@ -17,6 +17,8 @@ export default function LandingFooter() {
           <a href="#como-funciona" className="hover:text-mist transition-colors">Como funciona</a>
           <a href="#precos" className="hover:text-mist transition-colors">Preços</a>
           <a href="#faq" className="hover:text-mist transition-colors">Dúvidas</a>
+          <Link href="/termos" className="hover:text-mist transition-colors">Termos</Link>
+          <Link href="/privacidade" className="hover:text-mist transition-colors">Privacidade</Link>
           <Link href="/login" className="hover:text-mist transition-colors">Entrar</Link>
           <Link href="/registro" className="text-mist hover:text-white transition-colors">Criar minha loja</Link>
         </nav>

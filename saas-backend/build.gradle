@@ -71,6 +71,8 @@ def applyDevEnv = { task ->
 tasks.named('test') {
     useJUnitPlatform()
     applyDevEnv(it)
+    // Os testes nunca usam as chaves reais do saas-backend/.env
+    environment 'ENV_FILE', 'arquivo-inexistente.env'
     testLogging {
         events 'passed', 'failed', 'skipped'
         exceptionFormat 'full'

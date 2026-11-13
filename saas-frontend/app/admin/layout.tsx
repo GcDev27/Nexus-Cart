@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import UserButton from "../components/UserButton";
 import { authFetch } from "../lib/auth";
+import { daysUntil, useSubscription } from "../lib/subscription";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -52,6 +53,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .catch(() => {});
   }, [pathname]);
 
+  // Plano da loja: aviso de fim do teste ou de loja pausada em todas as telas do painel
+  const subscription = useSubscription([pathname]);
+
   // Mensagens de compradores ainda não lidas (badge em "Conversas"), atualizado a cada 20s
   const [chatUnread, setChatUnread] = useState(0);
   useEffect(() => {
@@ -86,9 +90,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   const secondaryNavItems = [
+    { name: "Meu plano", href: "/admin/plano", icon: "workspace_premium" },
     { name: "Configurações", href: "/admin/configuracoes", icon: "settings" },
-    { name: "Ajuda", href: "/admin/configuracoes", icon: "help" },
   ];
+
+  const trialDays = subscription?.status === "TRIALING" ? daysUntil(subscription.trialEndsAt) : null;
+  let planBanner: { tone: "warn" | "danger"; text: string } | null = null;
+  if (subscription && !subscription.storeOpen) {
+    planBanner = { tone: "danger", text: "Sua loja está pausada: a vitrine e o checkout estão fora do ar até a mensalidade ser paga." };
+  } else if (subscription?.status === "PAST_DUE") {
+    planBanner = { tone: "warn", text: "Sua mensalidade venceu. Pague para a loja não ser pausada." };
+  } else if (trialDays !== null && trialDays <= 3 && !subscription?.hasSubscription) {
+    planBanner = { tone: "warn", text: `Seu teste grátis termina em ${trialDays} ${trialDays === 1 ? "dia" : "dias"}. Assine para a loja continuar no ar.` };
+  }
 
   return (
     <div className="bg-surface font-body-md text-on-surface min-h-screen antialiased selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden">
@@ -193,7 +207,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           <div className="mt-space-sm pt-space-sm px-space-md flex items-center justify-between text-outline border-t border-surface-container-high/40">
-            <span className="font-label-xs text-label-xs uppercase tracking-wider truncate">v2.4.0 • SaaS PRO</span>
+            <span className="font-label-xs text-label-xs uppercase tracking-wider truncate">
+              {subscription ? `Plano ${subscription.planLabel}${subscription.status === "TRIALING" ? " • teste" : ""}` : "NexusCart"}
+            </span>
             <span className="material-symbols-outlined text-base text-secondary shrink-0">shield</span>
           </div>
         </div>
@@ -364,6 +380,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       ──────────────────────────────────────────────────────────── */}
       <div className="lg:pl-64 w-full max-w-full">
         <main className="w-full pt-16 bg-surface px-3 sm:px-space-md lg:px-space-lg min-h-screen pb-24 lg:pb-space-2xl max-w-full overflow-x-hidden">
+          {planBanner && pathname !== "/admin/plano" && (
+            <Link
+              href="/admin/plano"
+              className={`mt-space-md flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
+                planBanner.tone === "danger"
+                  ? "border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/15"
+                  : "border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/15"
+              }`}
+            >
+              <span className="material-symbols-outlined text-xl shrink-0">{planBanner.tone === "danger" ? "block" : "schedule"}</span>
+              <span className="flex-1">{planBanner.text}</span>
+              <span className="shrink-0 underline underline-offset-2">Ver plano</span>
+            </Link>
+          )}
           {children}
         </main>
       </div>

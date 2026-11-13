@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { authFetch } from "../lib/auth";
 import InteractiveLineGraph from "../components/InteractiveLineGraph";
+import { useSubscription } from "../lib/subscription";
 import type { ApiOrder, ApiProduct } from "@/app/lib/apiTypes";
 
 type TopProduto = {
@@ -32,6 +33,8 @@ export default function DashboardPage() {
   const [activeMetric, setActiveMetric] = useState<"receita" | "pedidos">("receita");
   const [isExporting, setIsExporting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const subscription = useSubscription();
+  const chartsLocked = subscription !== null && !subscription.salesDashboard;
   const [realKPIs, setRealKPIs] = useState<{
     faturamento: string;
     totalPedidos: string;
@@ -574,10 +577,22 @@ export default function DashboardPage() {
 
           {/* Interactive Line Graph com Scrubber, Tooltip e Dados Reais */}
           <div className="w-full relative my-2">
-            <InteractiveLineGraph
-              customData={chartSeries}
-              isCurrency={activeMetric === "receita"}
-            />
+            {chartsLocked ? (
+              <div className="h-56 flex flex-col items-center justify-center gap-3 text-center rounded-lg border border-dashed border-outline-variant/30 px-4">
+                <span className="material-symbols-outlined text-3xl text-primary">insights</span>
+                <p className="text-sm text-on-surface-variant max-w-sm">
+                  O gráfico de vendas por dia faz parte do plano Super. Seus totais continuam nos cards acima.
+                </p>
+                <Link href="/admin/plano" className="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold">
+                  Ver planos
+                </Link>
+              </div>
+            ) : (
+              <InteractiveLineGraph
+                customData={chartSeries}
+                isCurrency={activeMetric === "receita"}
+              />
+            )}
           </div>
 
           {/* Sub-strip de Métricas Reais do SaaS Digital */}

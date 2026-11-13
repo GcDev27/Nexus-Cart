@@ -38,8 +38,15 @@ export async function authFetch(path: string, options: RequestInit = {}): Promis
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  return fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
   });
+
+  // Sessão expirada ou encerrada (ex.: senha redefinida em outro aparelho): volta para o login
+  if (res.status === 401 && token && typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+    removeToken();
+    window.location.href = '/login?sessao=expirada';
+  }
+  return res;
 }

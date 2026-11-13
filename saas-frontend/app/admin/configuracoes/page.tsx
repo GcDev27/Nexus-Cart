@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSubscription } from '../../lib/subscription';
+import Link from 'next/link';
 import { authFetch } from '../../lib/auth';
 import { useToast } from '../../components/Toast';
 import { GatewayLogo, PixIcon } from '../../components/BankIcons';
@@ -104,6 +106,24 @@ const CORNER_STYLES = [
 ];
 
 // Miniatura do layout de cada template (usada nos cards de escolha e na pré-visualização)
+/** Recurso do plano Super em diante: mostra a seção apagada com o convite para trocar de plano. */
+function PlanLock({ locked, children }: { locked: boolean; children: React.ReactNode }) {
+  if (!locked) return <>{children}</>;
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-violet-500/30 bg-violet-500/10 px-4 py-3">
+        <span className="flex-1 text-sm text-violet-200">
+          Logo, capa, template, cores, fontes e cantos fazem parte do plano Super. No Starter, a loja usa o visual padrão do NexusCart.
+        </span>
+        <Link href="/admin/plano" className="shrink-0 px-3 py-1.5 rounded-lg bg-violet-500 text-white text-xs font-semibold">
+          Ver planos
+        </Link>
+      </div>
+      <div aria-disabled className="pointer-events-none select-none opacity-40">{children}</div>
+    </div>
+  );
+}
+
 function TemplateThumb({ themeId, accent, compact = false }: { themeId: string; accent?: string; compact?: boolean }) {
   const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
   const c = { ...theme.preview, accent: accent || theme.preview.accent };
@@ -554,6 +574,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('identidade');
+  const subscription = useSubscription();
+  const designLocked = subscription !== null && !subscription.customDesign;
   const { addToast } = useToast();
 
   // Dados da loja
@@ -1077,6 +1099,7 @@ export default function SettingsPage() {
                   )}
                 </SettingsCard>
 
+                <PlanLock locked={designLocked}>
                 <div className="grid sm:grid-cols-2 gap-6">
                   <SettingsCard title="Logo" desc="PNG, SVG, WEBP ou JPG. Prefira fundo transparente.">
                     <ImageUploader
@@ -1100,11 +1123,13 @@ export default function SettingsPage() {
                     />
                   </SettingsCard>
                 </div>
+                </PlanLock>
               </div>
             )}
 
             {/* ── TAB: Aparência ────────────────────────── */}
             {activeTab === 'tema' && (
+              <PlanLock locked={designLocked}>
               <div className="space-y-6 animate-in fade-in duration-150">
                 <SettingsCard title="Template da loja" desc="Cada template muda o layout da vitrine, não só as cores.">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1237,6 +1262,7 @@ export default function SettingsPage() {
                   </div>
                 </SettingsCard>
               </div>
+              </PlanLock>
             )}
 
             {/* ── TAB: Textos ───────────────────────────── */}

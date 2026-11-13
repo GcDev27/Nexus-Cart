@@ -6,6 +6,7 @@ import {
   Nunito, Raleway, Montserrat, Space_Grotesk
 } from "next/font/google";
 import { StoreProvider, StoreTenant, StoreTheme } from '../../components/store/StoreContext';
+import StorePausedGate from '../../components/store/StorePausedGate';
 
 const inter = Inter({ subsets: ['latin'] });
 const roboto = Roboto({ weight: ['300', '400', '500', '700'], subsets: ['latin'] });
@@ -111,7 +112,11 @@ export default async function StoreLayout({
         color: 'var(--text-primary)',
       } as React.CSSProperties}
     >
-      <StoreProvider tenant={store}>{children}</StoreProvider>
+      <StoreProvider tenant={store}>
+        <StorePausedGate open={tenant.storeOpen !== false} storeSlug={storeSlug} storeName={tenant.name}>
+          {children}
+        </StorePausedGate>
+      </StoreProvider>
     </div>
   );
 }

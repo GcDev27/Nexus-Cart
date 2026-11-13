@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, ShoppingBag, ArrowRight, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
@@ -18,6 +18,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('sessao') === 'expirada') {
+      setNotice('Sua sessão terminou. Entre de novo para continuar.');
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -99,6 +106,12 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {notice && !error && (
+            <div className="p-3 bg-surface-container-high border border-outline-variant/30 text-on-surface-variant rounded-xl text-xs">
+              {notice}
+            </div>
+          )}
+
           {error && (
             <div className="p-3 bg-error-container/20 border border-error/30 text-error rounded-xl text-xs flex items-start gap-2.5">
               <span className="material-symbols-outlined text-base shrink-0 mt-0.5">error</span>
@@ -127,9 +140,9 @@ export default function LoginPage() {
                 <label className="block font-label-xs text-label-xs text-on-surface-variant font-semibold">
                   Senha
                 </label>
-                <a href="#recuperar" className="text-[11px] text-outline hover:text-primary transition-colors">
+                <Link href="/esqueci-senha" className="text-[11px] text-outline hover:text-primary transition-colors">
                   Esqueceu?
-                </a>
+                </Link>
               </div>
               
               <div className="relative">

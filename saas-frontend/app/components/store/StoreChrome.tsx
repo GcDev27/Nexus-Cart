@@ -233,7 +233,9 @@ export function StoreFooter() {
         </div>
       </div>
       <p className="pb-8 text-center text-xs text-[var(--text-muted)]">
-        © {new Date().getFullYear()} {store.name}. Loja criada com NexusCart.
+        © {new Date().getFullYear()} {store.name}. Loja criada com NexusCart.{' '}
+        <Link href="/termos" className="underline hover:text-[var(--text-secondary)]">Termos</Link>{' · '}
+        <Link href="/privacidade" className="underline hover:text-[var(--text-secondary)]">Privacidade</Link>
       </p>
     </footer>
   );

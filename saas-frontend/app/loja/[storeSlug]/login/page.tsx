@@ -207,7 +207,12 @@ function LoginContent() {
               </label>
 
               <label className="block">
-                <span className="block text-sm mb-1.5">Senha</span>
+                <span className="flex items-center justify-between text-sm mb-1.5">
+                  Senha
+                  <Link href={`/loja/${storeSlug}/esqueci-senha`} className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                    Esqueceu?
+                  </Link>
+                </span>
                 <span className="relative block">
                   <input type={showPassword ? 'text' : 'password'} required autoComplete="current-password" value={loginPassword}
                     onChange={e => setLoginPassword(e.target.value)} className={fieldClass} style={fieldStyle} />

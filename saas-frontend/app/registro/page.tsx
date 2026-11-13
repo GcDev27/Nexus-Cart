@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { errorMessage } from '@/app/lib/apiTypes';
+import { PLANS, type PlanId } from '@/app/lib/subscription';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081';
 
@@ -18,6 +19,15 @@ export default function RegisterPage() {
     confirmPassword: '', // Novo campo
     storeName: '',
   });
+
+  const [plan, setPlan] = useState<PlanId>('SUPER');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  // Plano escolhido na landing (/registro?plan=starter)
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('plan')?.toUpperCase();
+    if (fromUrl && PLANS.some(p => p.id === fromUrl)) setPlan(fromUrl as PlanId);
+  }, []);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -54,14 +64,17 @@ export default function RegisterPage() {
           name: formData.name,
           email: formData.email,
           password: formData.password,
-          storeName: formData.storeName
+          storeName: formData.storeName,
+          plan,
+          acceptedTerms,
         }), // Enviamos sem o confirmPassword, pois o backend não precisa dele
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Ocorreu um erro ao criar sua conta e loja.');
+        const fieldError = data.errors ? Object.values(data.errors)[0] : null;
+        throw new Error(data.error || (fieldError as string) || 'Ocorreu um erro ao criar sua conta e loja.');
       }
 
       localStorage.setItem('token', data.token);
@@ -169,7 +182,7 @@ export default function RegisterPage() {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder="Mínimo 6 dígitos"
+                      placeholder="Mínimo 8 caracteres"
                       required
                       minLength={8}
                       className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-xl px-4 py-3 pr-10 text-on-surface text-sm placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary transition-all shadow-inner"
@@ -210,6 +223,45 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              <div>
+                <span className="block font-label-xs text-label-xs text-on-surface-variant mb-1 font-semibold">
+                  Plano para o teste grátis
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {PLANS.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setPlan(p.id)}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                        plan === p.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-outline-variant/30 bg-surface-container-lowest hover:border-outline-variant/60'
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-on-surface">{p.name}</span>
+                      <span className="block text-xs text-outline">R$ {p.price}/mês</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-outline">7 dias grátis, sem cartão. Você troca de plano quando quiser.</p>
+              </div>
+
+              <label className="flex items-start gap-2.5 text-xs text-on-surface-variant cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={e => setAcceptedTerms(e.target.checked)}
+                  required
+                  className="mt-0.5 accent-[var(--color-brand,#8b5cf6)]"
+                />
+                <span>
+                  Li e aceito os{' '}
+                  <Link href="/termos" target="_blank" className="text-primary underline">Termos de uso</Link> e a{' '}
+                  <Link href="/privacidade" target="_blank" className="text-primary underline">Política de privacidade</Link>.
+                </span>
+              </label>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -221,7 +273,7 @@ export default function RegisterPage() {
                     <span>Criando sua loja...</span>
                   </div>
                 ) : (
-                  <span>Criar Conta e Loja Grátis</span>
+                  <span>Começar 7 dias grátis</span>
                 )}
               </button>
             </form>

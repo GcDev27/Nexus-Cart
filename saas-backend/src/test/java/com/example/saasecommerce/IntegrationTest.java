@@ -114,10 +114,15 @@ public abstract class IntegrationTest {
     protected record Customer(String token, UUID id, String email) {}
 
     protected Merchant newMerchant() throws Exception {
+        return newMerchant("SUPER");
+    }
+
+    protected Merchant newMerchant(String plan) throws Exception {
         String email = unique("lojista") + "@teste.local";
         String password = "Senha-forte-123";
         Res reg = apiPost("/api/auth/register", null, Map.of(
-                "name", "Lojista", "email", email, "password", password, "storeName", unique("Loja")));
+                "name", "Lojista", "email", email, "password", password, "storeName", unique("Loja"),
+                "plan", plan, "acceptedTerms", true));
         if (reg.status() != 200) throw new IllegalStateException("cadastro do lojista falhou: " + reg.raw());
         String token = reg.body().get("token").asText();
         JsonNode me = apiGet("/api/v1/tenants/me", token).body();

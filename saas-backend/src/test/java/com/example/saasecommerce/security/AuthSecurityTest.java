@@ -136,7 +136,7 @@ class AuthSecurityTest extends IntegrationTest {
     @DisplayName("senha curta é recusada no cadastro de lojista e de comprador")
     void senhaFraca() throws Exception {
         Res merchant = apiPost("/api/auth/register", null, Map.of(
-                "name", "X", "email", unique("x") + "@teste.local", "password", "1234567", "storeName", unique("Loja")));
+                "name", "X", "email", unique("x") + "@teste.local", "password", "1234567", "storeName", unique("Loja"), "acceptedTerms", true));
         assertThat(merchant.status()).isEqualTo(400);
 
         Merchant m = newMerchant();
@@ -150,7 +150,7 @@ class AuthSecurityTest extends IntegrationTest {
     void emailRepetido() throws Exception {
         Merchant m = newMerchant();
         Res again = apiPost("/api/auth/register", null, Map.of(
-                "name", "X", "email", m.email(), "password", "Senha-forte-123", "storeName", unique("Loja")));
+                "name", "X", "email", m.email(), "password", "Senha-forte-123", "storeName", unique("Loja"), "acceptedTerms", true));
         assertThat(again.status()).isEqualTo(400);
         assertThat(again.body().get("error").asText()).contains("e-mail");
     }
@@ -159,8 +159,8 @@ class AuthSecurityTest extends IntegrationTest {
     @DisplayName("nome de loja repetido gera outro endereço em vez de falhar")
     void nomeDeLojaRepetido() throws Exception {
         String storeName = unique("Mesma Loja");
-        Res a = apiPost("/api/auth/register", null, Map.of("name", "A", "email", unique("a") + "@teste.local", "password", "Senha-forte-123", "storeName", storeName));
-        Res b = apiPost("/api/auth/register", null, Map.of("name", "B", "email", unique("b") + "@teste.local", "password", "Senha-forte-123", "storeName", storeName));
+        Res a = apiPost("/api/auth/register", null, Map.of("name", "A", "email", unique("a") + "@teste.local", "password", "Senha-forte-123", "storeName", storeName, "acceptedTerms", true));
+        Res b = apiPost("/api/auth/register", null, Map.of("name", "B", "email", unique("b") + "@teste.local", "password", "Senha-forte-123", "storeName", storeName, "acceptedTerms", true));
         assertThat(a.status()).isEqualTo(200);
         assertThat(b.status()).isEqualTo(200);
         String slugA = apiGet("/api/v1/tenants/me", a.body().get("token").asText()).body().get("slug").asText();
